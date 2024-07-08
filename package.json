@@ -1,0 +1,62 @@
+{
+  "name": "@apollosolutions/apollo-bvr-cli",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "bin": "bin/index.js",
+  "author": "lucas@apollographql.com",
+  "license": "MIT",
+  "type": "commonjs",
+  "repository": "https://github.com/apollosolutions/apollo-bvr-cli",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "lint": "eslint --ignore-path .eslintignore --ext .js,.ts .",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
+    "deploy": "npx tsc",
+    "prestart": "npx tsc",
+    "start": "node bin/index.js",
+    "codegen": "graphql-codegen --config codegen.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.6.0",
+    "@graphql-codegen/cli": "5.0.2",
+    "@graphql-codegen/client-preset": "4.3.2",
+    "@graphql-codegen/introspection": "4.0.3",
+    "@graphql-codegen/typescript-graphql-request": "^6.2.0",
+    "@types/eslint__js": "^8.42.3",
+    "@types/inquirer": "^8.2.1",
+    "@types/jsonwebtoken": "^9.0.1",
+    "@types/node": "^18.19.39",
+    "@typescript-eslint/eslint-plugin": "^5.30.6",
+    "@typescript-eslint/parser": "^5.30.6",
+    "eslint": "^8.57.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-config-standard-with-typescript": "^22.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.4",
+    "eslint-plugin-promise": "^6.0.0",
+    "prettier": "^2.7.1",
+    "typescript": "^4.9.5",
+    "typescript-eslint": "^7.15.0"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^5.1.2",
+    "clipanion": "^3.2.0-rc.14",
+    "csv-writer": "^1.6.0",
+    "dayjs": "^1.11.11",
+    "graphql": "^16.5.0",
+    "graphql-request": "^6.1.0",
+    "inquirer": "^8.2.6",
+    "jsonwebtoken": "^9.0.0",
+    "load-yaml-file": "^0.2.0",
+    "url-join": "^5.0.0",
+    "write-yaml-file": "^4.2.0"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all"
+  }
+}
