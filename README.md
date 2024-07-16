@@ -35,9 +35,9 @@ The nine reports are:
 - Field changes: the past 30 records of history (usually last 30 schema publishes) per variant and the number of types and fields within said variant after the publish
 - Field records: the last 30 changes that have happened in a variant at a field level, such as additions or removals
 - Field usage: information about the usage of a field per-variant over the given window
-- Odyssey: basic details about organization members' Odyssey progress, such as course access or certification information
 - Operation counts: usage per variant for graphs in your GraphOS organization
 - Schema checks/publishes: breakdowns on usage for schema checks/publishes
+- Users: basic details about organization members, such as course access or certification information in Odyssey and latest login information
 - Variants: basic information about variants in your organization
 
 ## Known Limitations

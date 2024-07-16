@@ -18,11 +18,13 @@ const clientUsage_1 = require("../util/clientUsage");
 const fieldChanges_1 = require("../util/fieldChanges");
 const fieldRecords_1 = require("../util/fieldRecords");
 const fieldUsage_1 = require("../util/fieldUsage");
-const odyssey_1 = require("../util/odyssey");
+const users_1 = require("../util/users");
 const operationCounts_1 = require("../util/operationCounts");
 const schemaChecks_1 = require("../util/schemaChecks");
 const schemaPublishes_1 = require("../util/schemaPublishes");
 const variants_1 = require("../util/variants");
+const chooseAccount_1 = require("../util/chooseAccount");
+// eslint-disable-next-line no-unused-vars
 const VALIDATE_TOKEN_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_ValidateToken{
   me {
@@ -42,6 +44,45 @@ query BVR_CLI_ValidateToken{
   }
 }
 `;
+const reportMapping = [
+    {
+        name: "Field Changes",
+        func: fieldChanges_1.generateFieldChangesReport
+    },
+    {
+        name: "Field Records",
+        func: fieldRecords_1.generateFieldRecordsReport
+    },
+    {
+        name: "Field Usage",
+        func: fieldUsage_1.generateFieldUsageReport
+    },
+    {
+        name: "Client Usage",
+        func: clientUsage_1.generateClientUsageReport
+    },
+    {
+        name: "User Report",
+        func: users_1.generateUserReport
+    },
+    {
+        name: "Operation Counts",
+        func: operationCounts_1.generateOperationCountsReport
+    },
+    {
+        name: "Schema Checks",
+        func: schemaChecks_1.generateSchemaChecksReport
+    },
+    {
+        name: "Schema Publishes",
+        func: schemaPublishes_1.generateSchemaPublishesReport
+    },
+    {
+        name: "Variants",
+        func: variants_1.generateVariantsReport
+    },
+];
+// eslint-disable-next-line no-unused-vars
 const VALIDATE_ACCOUNTID_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_ValidateAccountId($accountId: ID!){
   account(id: $accountId) {
@@ -61,9 +102,9 @@ class ConfigCommand extends clipanion_1.Command {
         });
     }
     execute() {
-        var _a, _b;
+        var _a, _b, _c, _d;
         return __awaiter(this, void 0, void 0, function* () {
-            let localKey = process.env["APOLLO_KEY"];
+            let localKey = process.env.APOLLO_KEY;
             if (this.apiKey) {
                 localKey = this.apiKey;
             }
@@ -83,7 +124,7 @@ class ConfigCommand extends clipanion_1.Command {
             const sdk = (0, sdk_1.getSdk)(client);
             let accounts = [];
             try {
-                let res = yield sdk.BVR_CLI_ValidateToken();
+                const res = yield sdk.BVR_CLI_ValidateToken();
                 if (!res.me) {
                     this.context.stdout.write("Invalid API key\n");
                     return 1;
@@ -101,14 +142,14 @@ class ConfigCommand extends clipanion_1.Command {
             }
             let accountId = '';
             if (!this.sudo) {
-                accountId = yield chooseAccountFromToken(accounts);
+                accountId = yield (0, chooseAccount_1.chooseAccountFromToken)(accounts);
             }
             else {
                 accountId = yield (0, prompts_1.input)({
                     message: 'Enter the account ID for the report',
-                    validate: (input) => __awaiter(this, void 0, void 0, function* () {
+                    validate: (userInput) => __awaiter(this, void 0, void 0, function* () {
                         try {
-                            let res = yield sdk.BVR_CLI_ValidateAccountId({ accountId: input });
+                            const res = yield sdk.BVR_CLI_ValidateAccountId({ accountId: userInput });
                             if (res.account) {
                                 return true;
                             }
@@ -136,14 +177,14 @@ class ConfigCommand extends clipanion_1.Command {
                         value: '-2592000',
                     }],
             });
-            const offset = parseInt(inputOffset);
+            const offset = parseInt(inputOffset, 10);
             this.context.stdout.write('Generating reports...\n');
             const reportGenerators = [
                 clientUsage_1.generateClientUsageReport,
                 fieldChanges_1.generateFieldChangesReport,
                 fieldRecords_1.generateFieldRecordsReport,
                 fieldUsage_1.generateFieldUsageReport,
-                odyssey_1.generateOdysseyReport,
+                users_1.generateUserReport,
                 operationCounts_1.generateOperationCountsReport,
                 schemaChecks_1.generateSchemaChecksReport,
                 schemaPublishes_1.generateSchemaPublishesReport,
@@ -156,9 +197,16 @@ class ConfigCommand extends clipanion_1.Command {
                 from: offset,
                 output: this.output,
             }));
-            let res = yield Promise.allSettled(reportPromises);
+            const res = yield Promise.allSettled(reportPromises);
             this.context.stdout.write(`\u2714 ${res.filter((promise) => promise.status === 'fulfilled').length} report(s) generated.\n`);
             this.context.stdout.write(`\u2716 ${res.filter((promise) => promise.status === 'rejected').length} report(s) failed.\n`);
+            for (let i = 0; i < res.length; i += 1) {
+                const r = res[i];
+                if (r.status === 'rejected') {
+                    this.context.stderr.write(`Error creating ${reportMapping[i].name}: ${(_d = (_c = r.reason.response) === null || _c === void 0 ? void 0 : _c.errors[0]) === null || _d === void 0 ? void 0 : _d.message}\n`);
+                }
+            }
+            return 0;
         });
     }
 }
@@ -168,24 +216,4 @@ ConfigCommand.usage = clipanion_1.Command.Usage({
     category: 'Report',
     description: 'generates a CSV report of various metrics used to calculate the business value of a GraphQL API.',
     examples: [['Basic usage', '$0 report']],
-});
-const chooseAccountFromToken = (existingAccounts) => __awaiter(void 0, void 0, void 0, function* () {
-    // Check if the user wants to use the account within the token itself
-    if (existingAccounts.length === 1) {
-        let useExisting = yield (0, prompts_1.confirm)({
-            message: `Use account ${existingAccounts[0]}?`,
-            default: true,
-        });
-        if (useExisting) {
-            return existingAccounts[0];
-        }
-    }
-    else if (existingAccounts.length > 1) {
-        let accountId = yield (0, prompts_1.select)({
-            message: 'Select an account:',
-            choices: existingAccounts.map(id => ({ name: id, value: id }))
-        });
-        return accountId;
-    }
-    return '';
 });

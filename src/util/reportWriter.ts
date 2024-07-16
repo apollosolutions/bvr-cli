@@ -1,5 +1,5 @@
-import { GenerateReportOptions } from "../types";
 import { CsvWriter } from "csv-writer/src/lib/csv-writer";
+import { GenerateReportOptions } from "../types";
 
 export const writeReports = async (
     options: GenerateReportOptions,
@@ -9,12 +9,12 @@ export const writeReports = async (
     const { command, output } = options;
 
     command.context.stdout.write(output);
-    if(output === 'json') {
+    if (output === 'json') {
         command.context.stdout.write(JSON.stringify(records, null, 2));
         return;
     }
 
-    if(output === 'csv') {
-        return await writer.writeRecords(records);
+    if (output === 'csv') {
+        await writer.writeRecords(records);
     }
 };

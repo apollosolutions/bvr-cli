@@ -1,11 +1,11 @@
 import { gql } from "graphql-request";
-import { Resolution, type Sdk } from "../gql/sdk";
 import { createObjectCsvWriter } from "csv-writer";
-import type { Command } from "clipanion";
+import { Resolution } from "../gql/sdk";
 import { cleanTimestamp } from "./timestamps";
 import { GenerateReportOptions } from "../types";
 import { writeReports } from "./reportWriter";
 
+// eslint-disable-next-line no-unused-vars
 const OPERATION_COUNTS = gql`
 query BVR_CLI_OperationCounts($accountId: ID!, $from: Timestamp!, $resolution: Resolution, $to: Timestamp) {
   organization(id: $accountId) {
@@ -26,37 +26,34 @@ query BVR_CLI_OperationCounts($accountId: ID!, $from: Timestamp!, $resolution: R
 }`
 
 export const generateOperationCountsReport = async (options: GenerateReportOptions) => {
-  const { command, client, accountId, from } = options;
-  const writer = createObjectCsvWriter({
-    path: `${accountId}-operation-counts.csv`,
-    header: [
-      { id: "timestamp", title: "Timestamp" },
-      { id: "graphRef", title: "Graph Reference" },
-      { id: "operationCount", title: "Operation Count" }
-    ]
-  })
+    const { command, client, accountId, from } = options;
+    const writer = createObjectCsvWriter({
+        path: `${accountId}-operation-counts.csv`,
+        header: [
+            { id: "timestamp", title: "Timestamp" },
+            { id: "graphRef", title: "Graph Reference" },
+            { id: "operationCount", title: "Operation Count" }
+        ]
+    })
 
-  let res = await client.BVR_CLI_OperationCounts({
-    accountId,
-    from,
-    resolution: Resolution.R1D,
-    to: "0"
-  })
+    const res = await client.BVR_CLI_OperationCounts({
+        accountId,
+        from,
+        resolution: Resolution.R1D,
+        to: "0"
+    })
 
-  let records = res.organization?.statsWindow?.billingUsageStats.map(stat => {
-    return {
-      timestamp: cleanTimestamp(stat.timestamp),
-      graphRef: `${stat.groupBy?.serviceId}@${stat.groupBy?.schemaTag}`,
-      operationCount: stat.metrics.operationCount
+    const records = res.organization?.statsWindow?.billingUsageStats.map(stat => ({
+        timestamp: cleanTimestamp(stat.timestamp),
+        graphRef: `${stat.groupBy?.serviceId}@${stat.groupBy?.schemaTag}`,
+        operationCount: stat.metrics.operationCount
+    })).flatMap((f) => (f ? [f] : []))
+
+    if (!records) {
+        command.context.stdout.write("No records found for operation counts.\n")
+        return
     }
-  }).flatMap((f) => (f ? [f] : []))
 
-  if (!records) {
-    command.context.stdout.write("No records found for operation counts.\n")
-    return
-  }
-
-
-  await writeReports(options, records, writer);
-  command.context.stdout.write("Operation counts report generated.\n")
+    await writeReports(options, records, writer);
+    command.context.stdout.write("Operation counts report generated.\n")
 }

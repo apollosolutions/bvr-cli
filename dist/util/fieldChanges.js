@@ -14,6 +14,7 @@ const graphql_request_1 = require("graphql-request");
 const csv_writer_1 = require("csv-writer");
 const timestamps_1 = require("./timestamps");
 const reportWriter_1 = require("./reportWriter");
+// eslint-disable-next-line no-unused-vars
 const FIELD_CHANGE_SUMMARY_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_FieldChangeSummary($accountId: ID!, $limit: Int!) {
   account(id: $accountId) {
@@ -58,26 +59,24 @@ const generateFieldChangesReport = (options) => __awaiter(void 0, void 0, void 0
             { id: "totalFieldCount", title: "Total Field Count" },
         ]
     });
-    let res = yield client.BVR_CLI_FieldChangeSummary({
+    const res = yield client.BVR_CLI_FieldChangeSummary({
         accountId,
         limit: 30
     });
-    let records = (_a = res.account) === null || _a === void 0 ? void 0 : _a.graphs.flatMap(graph => {
-        return graph.variants.flatMap(variant => {
-            var _a;
-            return (_a = variant.latestPublication) === null || _a === void 0 ? void 0 : _a.history.map(history => {
-                var _a, _b;
-                return {
-                    publishedAt: (0, timestamps_1.cleanTimestamp)(history.publishedAt),
-                    latestPublication: (_b = (0, timestamps_1.cleanTimestamp)((_a = variant.latestPublication) === null || _a === void 0 ? void 0 : _a.publishedAt)) !== null && _b !== void 0 ? _b : "UNKNOWN",
-                    name: graph.name,
-                    variantName: variant.id,
-                    totalTypeCount: history.schema.typeCount,
-                    totalFieldCount: history.schema.fieldCount
-                };
+    const records = (_a = res.account) === null || _a === void 0 ? void 0 : _a.graphs.flatMap(graph => graph.variants.flatMap(variant => {
+        var _a;
+        return (_a = variant.latestPublication) === null || _a === void 0 ? void 0 : _a.history.map(history => {
+            var _a, _b;
+            return ({
+                publishedAt: (0, timestamps_1.cleanTimestamp)(history.publishedAt),
+                latestPublication: (_b = (0, timestamps_1.cleanTimestamp)((_a = variant.latestPublication) === null || _a === void 0 ? void 0 : _a.publishedAt)) !== null && _b !== void 0 ? _b : "UNKNOWN",
+                name: graph.name,
+                variantName: variant.id,
+                totalTypeCount: history.schema.typeCount,
+                totalFieldCount: history.schema.fieldCount
             });
         });
-    }).flatMap((f) => (f ? [f] : []));
+    })).flatMap((f) => (f ? [f] : []));
     if (!records) {
         command.context.stdout.write("No records found for field changes.\n");
         return;

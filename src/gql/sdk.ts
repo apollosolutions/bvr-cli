@@ -27,7 +27,7 @@ export type Scalars = {
   Object: { input: any; output: any; }
   SHA256: { input: any; output: any; }
   StringOrInt: { input: any; output: any; }
-  Timestamp: { input: any; output: any; }
+  Timestamp: { input: string | number; output: string | number; }
   Void: { input: any; output: any; }
 };
 
@@ -1111,6 +1111,7 @@ export type AccountMembership = {
 
 export type AccountMutation = {
   __typename?: 'AccountMutation';
+  addOidcConfigurationToBaseConnection?: Maybe<OidcConnection>;
   addSamlMetadataToBaseConnection?: Maybe<SamlConnection>;
   /** @deprecated Use saml { addVerificationCert } instead */
   addSamlVerificationCert?: Maybe<Scalars['Void']['output']>;
@@ -1190,6 +1191,8 @@ export type AccountMutation = {
   updateLegacySsoProvider?: Maybe<Scalars['Void']['output']>;
   /** Update the company name */
   updateName?: Maybe<Scalars['Void']['output']>;
+  /** Updates the OIDC metadata for an existing SSO connection. Connection must be disabled prior to the update. */
+  updateOidcConnectionMetadata?: Maybe<OidcConnection>;
   /** Apollo admins only: enable or disable an account for PingOne SSO login */
   updatePingOneSSOIDPID?: Maybe<Account>;
   /** Updates the role assigned to new SSO users. */
@@ -1201,8 +1204,16 @@ export type AccountMutation = {
 };
 
 
+export type AccountMutationAddOidcConfigurationToBaseConnectionArgs = {
+  config: OidcConfigurationInput;
+  connectionId: Scalars['ID']['input'];
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
 export type AccountMutationAddSamlMetadataToBaseConnectionArgs = {
   connectionId: Scalars['ID']['input'];
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
   metadata: SamlConfigurationInput;
 };
 
@@ -1367,6 +1378,12 @@ export type AccountMutationUpdateLegacySsoProviderArgs = {
 
 export type AccountMutationUpdateNameArgs = {
   name: Scalars['String']['input'];
+};
+
+
+export type AccountMutationUpdateOidcConnectionMetadataArgs = {
+  connectionId: Scalars['ID']['input'];
+  metadata: OidcConfigurationUpdateInput;
 };
 
 
@@ -2270,7 +2287,9 @@ export type BaseConnection = SsoConnection & {
   domains: Array<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   idpId: Scalars['ID']['output'];
+  /** @deprecated Use stateV2 instead */
   state: SsoConnectionState;
+  stateV2: SsoConnectionStateV2;
 };
 
 export type BillableMetricStats = {
@@ -3133,6 +3152,12 @@ export enum ChangeCode {
   FieldRemoved = 'FIELD_REMOVED',
   /** Field was removed from the input object. */
   FieldRemovedFromInputObject = 'FIELD_REMOVED_FROM_INPUT_OBJECT',
+  /** A default value was added to an input object field. */
+  InputObjectFieldDefaultValueAdded = 'INPUT_OBJECT_FIELD_DEFAULT_VALUE_ADDED',
+  /** The default value of an input object field was changed. */
+  InputObjectFieldDefaultValueChange = 'INPUT_OBJECT_FIELD_DEFAULT_VALUE_CHANGE',
+  /** The default value of an input object field was removed. */
+  InputObjectFieldDefaultValueRemoved = 'INPUT_OBJECT_FIELD_DEFAULT_VALUE_REMOVED',
   /** Non-nullable field was added to the input object. (Deprecated.) */
   NonNullableFieldAddedToInputObject = 'NON_NULLABLE_FIELD_ADDED_TO_INPUT_OBJECT',
   /** Nullable field was added to the input type. (Deprecated.) */
@@ -4499,14 +4524,6 @@ export type CreateAwsShardInput = {
   vpcId: Scalars['String']['input'];
 };
 
-/** Input to create a new Fly shard */
-export type CreateFlyShardInput = {
-  endpoint: Scalars['String']['input'];
-  etcdEndpoints: Array<Scalars['String']['input']>;
-  organizationId: Scalars['String']['input'];
-  region: Scalars['String']['input'];
-};
-
 /** Result from the createCloudOnboarding mutation */
 export type CreateOnboardingResult = CreateOnboardingSuccess | InternalServerError | InvalidInputErrors;
 
@@ -4586,7 +4603,6 @@ export type CreateRouterVersionResult = InternalServerError | InvalidInputErrors
 /** Input to create a new Shard */
 export type CreateShardInput = {
   aws?: InputMaybe<CreateAwsShardInput>;
-  fly?: InputMaybe<CreateFlyShardInput>;
   gcuCapacity?: InputMaybe<Scalars['Int']['input']>;
   gcuUsage?: InputMaybe<Scalars['Int']['input']>;
   provider: CloudProvider;
@@ -4620,6 +4636,39 @@ export type CronJob = {
 
 export type CronJobRecentExecutionsArgs = {
   n?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Custom check configuration detailing webhook integration. */
+export type CustomCheckConfiguration = {
+  __typename?: 'CustomCheckConfiguration';
+  channel: CustomCheckWebhookChannel;
+  id: Scalars['ID']['output'];
+};
+
+/** Result of a custom check configuration update mutation. */
+export type CustomCheckConfigurationResult = CustomCheckConfiguration | PermissionError | ValidationError;
+
+/** Configuration of a webhook integration for a custom check. */
+export type CustomCheckWebhookChannel = {
+  __typename?: 'CustomCheckWebhookChannel';
+  /** The time when this CustomCheckWebhookChannel was created. */
+  createdAt: Scalars['Timestamp']['output'];
+  /** The Identity that created this CustomCheckWebhookChannel. null if the Identity has been deleted. */
+  createdBy?: Maybe<Identity>;
+  /** True if this CustomCheckWebhookChannel is actively sending notifications. */
+  enabled: Scalars['Boolean']['output'];
+  /** The ID for this webhook channel */
+  id: Scalars['ID']['output'];
+  /** The last time this subscription was updated, if never updated will be the createdAt time. */
+  lastUpdatedAt: Scalars['Timestamp']['output'];
+  /** The Identity that last updated this CustomCheckWebhookChannel, or the creator if no one has updated. null if the Identity has been deleted. */
+  lastUpdatedBy?: Maybe<Identity>;
+  /** The human readable name for this channel */
+  name: Scalars['String']['output'];
+  /** The URL to send the webhook to. */
+  url: Scalars['String']['output'];
+  /** The variant name if this channel is only configured for a specific variant. If null, this configuration applies to all variants. */
+  variant?: Maybe<Scalars['String']['output']>;
 };
 
 export type CustomerAccount = {
@@ -5993,39 +6042,6 @@ export type FlatDiffTypeSummary = {
   typeCount: Scalars['Int']['output'];
 };
 
-/** Error connecting to Fly */
-export type FlyClientError = {
-  __typename?: 'FlyClientError';
-  /** Error message */
-  message: Scalars['String']['output'];
-};
-
-/** Error triggering a rolling update */
-export type FlyForceRollingUpdateError = {
-  __typename?: 'FlyForceRollingUpdateError';
-  /** Concrete error for the flyForceRollingUpdate mutation */
-  error: FlyForceRollingUpdateErrorValue;
-};
-
-/** Concrete error for the flyForceRollingUpdate mutation */
-export type FlyForceRollingUpdateErrorValue = FlyClientError | InvalidRequest;
-
-/** Result of a flyForceRollingUpdate mutation */
-export type FlyForceRollingUpdateResult = FlyForceRollingUpdateError | FlyForceRollingUpdateSuccess;
-
-/** Success triggering a rolling update */
-export type FlyForceRollingUpdateSuccess = {
-  __typename?: 'FlyForceRollingUpdateSuccess';
-  /** Whether the app was updated */
-  updated: Scalars['Boolean']['output'];
-};
-
-export type FlyRouterMutation = {
-  __typename?: 'FlyRouterMutation';
-  /** Force a rolling update */
-  forceRollingUpdate: FlyForceRollingUpdateResult;
-};
-
 /** Fly-specific information for a Shard */
 export type FlyShard = {
   __typename?: 'FlyShard';
@@ -6222,6 +6238,8 @@ export type GraphVariant = {
   coordinateInsightsList: GraphVariantCoordinateInsightsListItemConnection;
   /** Time the variant was created */
   createdAt: Scalars['Timestamp']['output'];
+  /** Custom check configuration for this graph. */
+  customCheckConfiguration?: Maybe<CustomCheckConfiguration>;
   derivedVariantCount: Scalars['Int']['output'];
   /** Returns the list of variants derived from this variant. This currently includes contracts only. */
   derivedVariants?: Maybe<Array<GraphVariant>>;
@@ -6555,6 +6573,7 @@ export type GraphVariantMutation = {
   /** Mutation called by CheckCoordinator to find associated proposals to the schema diffs in a check workflow */
   runProposalsCheck: CheckStepResult;
   service: Service;
+  setCustomCheckConfiguration: CustomCheckConfigurationResult;
   setIsFavoriteOfCurrentUser: GraphVariant;
   /**
    * _Asynchronously_ kicks off operation checks for a proposed non-federated
@@ -6587,6 +6606,7 @@ export type GraphVariantMutation = {
    */
   submitSubgraphCheckAsync: CheckRequestResult;
   unlinkPersistedQueryList: UnlinkPersistedQueryListResultOrError;
+  updateCheckConfigurationCustomChecks: VariantCheckConfiguration;
   updateCheckConfigurationDowngradeChecks: VariantCheckConfiguration;
   updateCheckConfigurationDownstreamVariants: VariantCheckConfiguration;
   updateCheckConfigurationEnableOperationsCheck?: Maybe<VariantCheckConfiguration>;
@@ -6658,6 +6678,12 @@ export type GraphVariantMutationRunProposalsCheckArgs = {
 
 
 /** Modifies a variant of a graph, also called a schema tag in parts of our product. */
+export type GraphVariantMutationSetCustomCheckConfigurationArgs = {
+  input: SetCustomCheckConfigurationInput;
+};
+
+
+/** Modifies a variant of a graph, also called a schema tag in parts of our product. */
 export type GraphVariantMutationSetIsFavoriteOfCurrentUserArgs = {
   favorite: Scalars['Boolean']['input'];
 };
@@ -6684,6 +6710,13 @@ export type GraphVariantMutationSubmitMultiSubgraphCheckAsyncArgs = {
 /** Modifies a variant of a graph, also called a schema tag in parts of our product. */
 export type GraphVariantMutationSubmitSubgraphCheckAsyncArgs = {
   input: SubgraphCheckAsyncInput;
+};
+
+
+/** Modifies a variant of a graph, also called a schema tag in parts of our product. */
+export type GraphVariantMutationUpdateCheckConfigurationCustomChecksArgs = {
+  enableCustomChecks?: InputMaybe<Scalars['Boolean']['input']>;
+  useGraphSettings: Scalars['Boolean']['input'];
 };
 
 
@@ -7360,13 +7393,6 @@ export type InvalidOperation = {
 /** This object is returned when a request to fetch a Studio graph variant provides an invalid graph ref. */
 export type InvalidRefFormat = Error & {
   __typename?: 'InvalidRefFormat';
-  message: Scalars['String']['output'];
-};
-
-/** Invalid request */
-export type InvalidRequest = {
-  __typename?: 'InvalidRequest';
-  /** Error message */
   message: Scalars['String']['output'];
 };
 
@@ -8379,6 +8405,13 @@ export type OidcConfigurationInput = {
   issuer: Scalars['String']['input'];
 };
 
+export type OidcConfigurationUpdateInput = {
+  clientId: Scalars['String']['input'];
+  clientSecret?: InputMaybe<Scalars['String']['input']>;
+  discoveryURI?: InputMaybe<Scalars['String']['input']>;
+  issuer: Scalars['String']['input'];
+};
+
 export type OidcConnection = SsoConnection & {
   __typename?: 'OidcConnection';
   clientId: Scalars['ID']['output'];
@@ -8387,7 +8420,9 @@ export type OidcConnection = SsoConnection & {
   id: Scalars['ID']['output'];
   idpId: Scalars['ID']['output'];
   issuer: Scalars['String']['output'];
+  /** @deprecated Use stateV2 instead */
   state: SsoConnectionState;
+  stateV2: SsoConnectionStateV2;
 };
 
 export type OidcConnectionInput = {
@@ -9101,8 +9136,6 @@ export type Order = {
   logs: Array<LogMessage>;
   /** Order type */
   orderType: OrderType;
-  /** Checks if machines are ready to serve requests */
-  ready: Scalars['Boolean']['output'];
   /** Checks if we can serve requests through the external endpoint */
   readyExternal: Scalars['Boolean']['output'];
   /** Reason for ERRORED or ROLLING_BACK orders */
@@ -9136,14 +9169,10 @@ export type OrderMutation = {
   __typename?: 'OrderMutation';
   /** Create an ALB rule */
   createAlbRule: OrderResult;
-  /** Create a new app */
-  createApp: OrderResult;
   /** Create CNAME record */
   createCname: OrderResult;
   /** Create an IAM Role */
   createIamRole: OrderResult;
-  /** Create machines */
-  createMachines: OrderResult;
   /** Create a security group */
   createSecurityGroup: OrderResult;
   /** Create an ECS service */
@@ -9156,14 +9185,10 @@ export type OrderMutation = {
   deleteAlbRule: OrderResult;
   /** Delete API key */
   deleteApiKey: OrderResult;
-  /** Delete application */
-  deleteApp: OrderResult;
   /** Delete CNAME */
   deleteCname: OrderResult;
   /** Delete an IAM Role */
   deleteIamRole: OrderResult;
-  /** Delete machines */
-  deleteMachines: OrderResult;
   /** Delete a security group */
   deleteSecurityGroup: OrderResult;
   /** Delete an ECS service */
@@ -9176,18 +9201,12 @@ export type OrderMutation = {
   forceRollback: OrderResult;
   /** Rollback an ALB rule */
   rollbackAlbRule: OrderResult;
-  /** Rollback application */
-  rollbackApp: OrderResult;
   /** Rollback CNAME record */
   rollbackCname: OrderResult;
-  /** Rollback etcd data */
-  rollbackEtcd: OrderResult;
   /** Rollback an IAM Role */
   rollbackIamRole: OrderResult;
   /** Rollback router information */
   rollbackInfo: OrderResult;
-  /** Rollback machines */
-  rollbackMachines: OrderResult;
   /** Rollback router information */
   rollbackSecrets: OrderResult;
   /** Rollback a security group */
@@ -9202,8 +9221,6 @@ export type OrderMutation = {
   setDefaultVars: OrderResult;
   /** Update an ALB rule */
   updateAlbRule: OrderResult;
-  /** Update Etcd cluster */
-  updateEtcd: OrderResult;
   /** Update an IAM Role */
   updateIamRole: OrderResult;
   /** Update router information */
@@ -9381,6 +9398,7 @@ export type ParsedSamlCertInfo = {
 /** SAML metadata parsed from an IdP's metadata XML */
 export type ParsedSamlIdpMetadata = {
   __typename?: 'ParsedSamlIdpMetadata';
+  encryptionCerts: Array<ParsedSamlCertInfo>;
   entityId: Scalars['String']['output'];
   ssoUrl: Scalars['String']['output'];
   verificationCerts: Array<ParsedSamlCertInfo>;
@@ -11415,8 +11433,6 @@ export type RouterMutation = {
    * This mutation will only work if the Router is not in a DELETED state
    */
   enableDefaultEndpoint: RouterEndpointsResult;
-  /** Router mutations for Cloud Routers hosted on Fly */
-  fly?: Maybe<FlyRouterMutation>;
   /** Remove a custom domain for this Cloud Router */
   removeCustomDomain: RouterEndpointsResult;
   /**
@@ -11806,6 +11822,7 @@ export type SamlCertInfo = {
 };
 
 export type SamlConfigurationInput = {
+  encryptionCerts?: InputMaybe<Array<Scalars['String']['input']>>;
   entityId: Scalars['String']['input'];
   ssoUrl: Scalars['String']['input'];
   verificationCerts: Array<Scalars['String']['input']>;
@@ -11818,11 +11835,14 @@ export type SamlConnection = SsoConnection & {
   id: Scalars['ID']['output'];
   idpId: Scalars['ID']['output'];
   metadata: SamlIdpMetadata;
+  /** @deprecated Use stateV2 instead */
   state: SsoConnectionState;
+  stateV2: SsoConnectionStateV2;
 };
 
 export type SamlConnectionInput = {
   domains: Array<Scalars['String']['input']>;
+  encryptionCerts?: InputMaybe<Array<Scalars['String']['input']>>;
   entityId: Scalars['String']['input'];
   idpId?: InputMaybe<Scalars['String']['input']>;
   ssoUrl: Scalars['String']['input'];
@@ -11832,8 +11852,14 @@ export type SamlConnectionInput = {
 
 export type SamlConnectionMutation = {
   __typename?: 'SamlConnectionMutation';
+  addEncryptionCert?: Maybe<SamlConnection>;
   addVerificationCert?: Maybe<SamlConnection>;
   updateIdpId?: Maybe<SamlConnection>;
+};
+
+
+export type SamlConnectionMutationAddEncryptionCertArgs = {
+  pem: Scalars['String']['input'];
 };
 
 
@@ -11848,6 +11874,7 @@ export type SamlConnectionMutationUpdateIdpIdArgs = {
 
 export type SamlIdpMetadata = {
   __typename?: 'SamlIdpMetadata';
+  encryptionCerts: Array<SamlCertInfo>;
   entityId: Scalars['String']['output'];
   ssoUrl: Scalars['String']['output'];
   verificationCerts: Array<SamlCertInfo>;
@@ -12240,6 +12267,8 @@ export type Service = Identity & {
   compositionResultById?: Maybe<CompositionResult>;
   createdAt: Scalars['Timestamp']['output'];
   createdBy?: Maybe<Identity>;
+  /** Custom check configuration for this graph. */
+  customCheckConfiguration?: Maybe<CustomCheckConfiguration>;
   datadogMetricsConfig?: Maybe<DatadogMetricsConfig>;
   defaultBuildPipelineTrack?: Maybe<Scalars['String']['output']>;
   /** The time the default build pipeline track version was updated. */
@@ -13576,6 +13605,7 @@ export type ServiceMutation = {
   /** Mutations for a specific assessment. */
   safAssessment?: Maybe<SafAssessmentMutation>;
   service: Service;
+  setCustomCheckConfiguration: CustomCheckConfigurationResult;
   setDefaultBuildPipelineTrack?: Maybe<Scalars['String']['output']>;
   setMinProposalApprovers: SetMinApproversResult;
   /** The minimum role for create & edit is graph admin */
@@ -13926,6 +13956,12 @@ export type ServiceMutationReportServerInfoArgs = {
 export type ServiceMutationSafAssessmentArgs = {
   id: Scalars['ID']['input'];
   includeDeleted?: Scalars['Boolean']['input'];
+};
+
+
+/** Provides access to mutation fields for managing Studio graphs and subgraphs. */
+export type ServiceMutationSetCustomCheckConfigurationArgs = {
+  input: SetCustomCheckConfigurationInput;
 };
 
 
@@ -14800,6 +14836,13 @@ export type ServiceTraceRefsRecord = {
   timestamp: Scalars['Timestamp']['output'];
 };
 
+export type SetCustomCheckConfigurationInput = {
+  displayName: Scalars['String']['input'];
+  enabled: Scalars['Boolean']['input'];
+  secretToken?: InputMaybe<Scalars['String']['input']>;
+  url: Scalars['String']['input'];
+};
+
 export type SetMinApproversResult = PermissionError | Service | ValidationError;
 
 export type SetMinProposalApproversInput = {
@@ -14985,12 +15028,27 @@ export type SsoConnection = {
   domains: Array<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   idpId: Scalars['ID']['output'];
+  /** @deprecated Use stateV2 instead */
   state: SsoConnectionState;
+  stateV2: SsoConnectionStateV2;
 };
 
 export enum SsoConnectionState {
   Disabled = 'DISABLED',
   Enabled = 'ENABLED'
+}
+
+export enum SsoConnectionStateV2 {
+  /** The connection has been disabled by an admin */
+  Disabled = 'DISABLED',
+  /** The connection has been finalized. a connection can only go from VALIDATED->ENABLED or DISABLED->ENABLED */
+  Enabled = 'ENABLED',
+  /** The initial state for base connections - setup still in progress */
+  Initialized = 'INITIALIZED',
+  /** The connection has been configured as either SAML/OIDC and can be used to login */
+  Staged = 'STAGED',
+  /** The connection has had at least one successful login - connections automatically transition from STAGED->VALIDATED on first login */
+  Validated = 'VALIDATED'
 }
 
 export type SsoMutation = {
@@ -15506,32 +15564,19 @@ export type TraceHttp = {
 
 export type TraceNode = {
   __typename?: 'TraceNode';
+  /** Additional metadata for the node, presented in key-value pairs. */
+  attributes: Array<StringToString>;
   cacheMaxAgeMs?: Maybe<Scalars['Float']['output']>;
   cacheScope?: Maybe<CacheScope>;
   /** The total number of children, including the ones that were truncated. */
   childCount: Scalars['Int']['output'];
-  /**
-   * The immediate children of the node. There is a maximum number of children we will return so
-   * this might be truncated, but childCount will always have the total count.
-   */
-  children: Array<TraceNode>;
   /** Whether the children of this node have been truncated because the number of children is over the max. */
   childrenAreTruncated: Scalars['Boolean']['output'];
-  /**
-   * The IDs of the immediate children of the node. There is a maximum number of children we will
-   * return so this might be truncated, but childCount will always have the total count.
-   */
-  childrenIds: Array<Scalars['ID']['output']>;
   /**
    * All children, and the children of those children, and so on. Children that have been truncated
    * are not included.
    */
   descendants: Array<TraceNode>;
-  /**
-   * All IDs of children, and the IDs of the children of those children, and so on. Children that
-   * have been truncated are not included.
-   */
-  descendantsIds: Array<Scalars['ID']['output']>;
   /**
    * The end time of the node. If this is a fetch node (meaning isFetch is true), this will be the
    * time that the gateway/router received the response from the subgraph server in the
@@ -15552,10 +15597,10 @@ export type TraceNode = {
    */
   isFetch: Scalars['Boolean']['output'];
   key?: Maybe<Scalars['StringOrInt']['output']>;
+  /** A classification which helps to differentiate between types of nodes (intended for display / filtering purposes). */
+  kind: TraceNodeKind;
   originalFieldName?: Maybe<Scalars['String']['output']>;
-  parent: Scalars['ID']['output'];
   parentId?: Maybe<Scalars['ID']['output']>;
-  path: Array<Scalars['String']['output']>;
   /**
    * The start time of the node. If this is a fetch node (meaning isFetch is true), this will be the
    * time that the gateway/router sent the request to the subgraph server in the gateway/router's clock
@@ -15570,6 +15615,8 @@ export type TraceNode = {
    * (e.g. if the subgraph doesn't support federated traces), this value will be null.
    */
   subgraphEndTime?: Maybe<Scalars['Timestamp']['output']>;
+  /** If present, indicates the subgraph context a node is associated with. */
+  subgraphName?: Maybe<Scalars['String']['output']>;
   /**
    * Only present when the node in question is a fetch node, this will indicate the timestamp at which
    * the fetch was received by the subgraph server. This timestamp is based on the subgraph server's
@@ -15580,6 +15627,15 @@ export type TraceNode = {
   subgraphStartTime?: Maybe<Scalars['Timestamp']['output']>;
   type?: Maybe<Scalars['String']['output']>;
 };
+
+export enum TraceNodeKind {
+  ArrayIndexResolver = 'ARRAY_INDEX_RESOLVER',
+  FieldResolver = 'FIELD_RESOLVER',
+  Request = 'REQUEST',
+  RouterInternal = 'ROUTER_INTERNAL',
+  SubgraphRequest = 'SUBGRAPH_REQUEST',
+  UserPlugin = 'USER_PLUGIN'
+}
 
 /** Columns of TracePathErrorsRefs. */
 export enum TracePathErrorsRefsColumn {
@@ -15916,14 +15972,6 @@ export type UpdateDescriptionInput = {
   description: Scalars['String']['input'];
 };
 
-/** Input to update a Fly shard */
-export type UpdateFlyShardInput = {
-  endpoint?: InputMaybe<Scalars['String']['input']>;
-  etcdEndpoints?: InputMaybe<Array<Scalars['String']['input']>>;
-  organizationId?: InputMaybe<Scalars['String']['input']>;
-  region?: InputMaybe<Scalars['String']['input']>;
-};
-
 export type UpdateOperationCollectionEntryResult = OperationCollectionEntry | PermissionError | ValidationError;
 
 export type UpdateOperationCollectionResult = OperationCollection | PermissionError | ValidationError;
@@ -15995,7 +16043,6 @@ export type UpdateRouterVersionResult = InternalServerError | InvalidInputErrors
 /** Input to update an existing Shard */
 export type UpdateShardInput = {
   aws?: InputMaybe<UpdateAwsShardInput>;
-  fly?: InputMaybe<UpdateFlyShardInput>;
   gcuCapacity?: InputMaybe<Scalars['Int']['input']>;
   gcuUsage?: InputMaybe<Scalars['Int']['input']>;
   reason?: InputMaybe<Scalars['String']['input']>;
@@ -16473,6 +16520,7 @@ export type VariantCheckConfiguration = {
   __typename?: 'VariantCheckConfiguration';
   /** Time when the check configuration was created. */
   createdAt: Scalars['Timestamp']['output'];
+  customChecksConfig: VariantCheckConfigurationCustomChecks;
   /** Operation checks configuration that allows associated checks to be downgraded from failure to passing. */
   downgradeChecksConfig: VariantCheckConfigurationDowngradeChecks;
   /**
@@ -16502,6 +16550,14 @@ export type VariantCheckConfiguration = {
   updatedAt: Scalars['Timestamp']['output'];
   /** Identity of the last actor to update the check configuration, if available. */
   updatedBy?: Maybe<Identity>;
+};
+
+export type VariantCheckConfigurationCustomChecks = {
+  __typename?: 'VariantCheckConfigurationCustomChecks';
+  /** Whether custom checks is enabled for this variant. Non-null if useGraphSettings is false, otherwise null. */
+  enableCustomChecks?: Maybe<Scalars['Boolean']['output']>;
+  /** When true, indicates that graph-level configuration is used for this variant setting. The default at variant creation is true. */
+  useGraphSettings: Scalars['Boolean']['output'];
 };
 
 export type VariantCheckConfigurationDowngradeChecks = {
@@ -16683,7 +16739,7 @@ export type Bvr_Cli_ClientUsageQueryVariables = Exact<{
 }>;
 
 
-export type Bvr_Cli_ClientUsageQuery = { __typename?: 'Query', account?: { __typename?: 'Account', graphs: Array<{ __typename?: 'Service', id: string, name: string, statsWindow?: { __typename?: 'ServiceStatsWindow', fieldUsage: Array<{ __typename?: 'ServiceFieldUsageRecord', timestamp: any, groupBy: { __typename?: 'ServiceFieldUsageDimensions', clientName?: string | null }, metrics: { __typename?: 'ServiceFieldUsageMetrics', estimatedExecutionCount: any } }> } | null }> } | null };
+export type Bvr_Cli_ClientUsageQuery = { __typename?: 'Query', account?: { __typename?: 'Account', graphs: Array<{ __typename?: 'Service', id: string, name: string, statsWindow?: { __typename?: 'ServiceStatsWindow', fieldUsage: Array<{ __typename?: 'ServiceFieldUsageRecord', timestamp: string | number, groupBy: { __typename?: 'ServiceFieldUsageDimensions', clientName?: string | null }, metrics: { __typename?: 'ServiceFieldUsageMetrics', estimatedExecutionCount: any } }> } | null }> } | null };
 
 export type Bvr_Cli_FieldChangeSummaryQueryVariables = Exact<{
   accountId: Scalars['ID']['input'];
@@ -16691,7 +16747,7 @@ export type Bvr_Cli_FieldChangeSummaryQueryVariables = Exact<{
 }>;
 
 
-export type Bvr_Cli_FieldChangeSummaryQuery = { __typename?: 'Query', account?: { __typename?: 'Account', graphs: Array<{ __typename?: 'Service', id: string, name: string, variants: Array<{ __typename?: 'GraphVariant', graphId: string, id: string, latestPublication?: { __typename?: 'SchemaTag', id: string, createdAt: any, publishedAt: any, historyLength: number, historyOrder: number, history: Array<{ __typename?: 'SchemaTag', createdAt: any, publishedAt: any, schema: { __typename?: 'Schema', fieldCount: number, typeCount: number, createdAt: any } }> } | null }> }> } | null };
+export type Bvr_Cli_FieldChangeSummaryQuery = { __typename?: 'Query', account?: { __typename?: 'Account', graphs: Array<{ __typename?: 'Service', id: string, name: string, variants: Array<{ __typename?: 'GraphVariant', graphId: string, id: string, latestPublication?: { __typename?: 'SchemaTag', id: string, createdAt: string | number, publishedAt: string | number, historyLength: number, historyOrder: number, history: Array<{ __typename?: 'SchemaTag', createdAt: string | number, publishedAt: string | number, schema: { __typename?: 'Schema', fieldCount: number, typeCount: number, createdAt: string | number } }> } | null }> }> } | null };
 
 export type Bvr_Cli_FieldRecordsQueryVariables = Exact<{
   accountId: Scalars['ID']['input'];
@@ -16699,7 +16755,7 @@ export type Bvr_Cli_FieldRecordsQueryVariables = Exact<{
 }>;
 
 
-export type Bvr_Cli_FieldRecordsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', graphs: Array<{ __typename?: 'Service', id: string, name: string, variants: Array<{ __typename?: 'GraphVariant', graphId: string, latestPublication?: { __typename?: 'SchemaTag', id: string, createdAt: any, publishedAt: any, diffToPrevious?: { __typename?: 'SchemaDiff', tag?: string | null, changes: Array<{ __typename?: 'Change', category: ChangeCategory, severity: ChangeSeverity, description: string, childNode?: { __typename?: 'NamedIntrospectionValue', description?: string | null, name?: string | null, printedType?: string | null } | null, parentNode?: { __typename?: 'NamedIntrospectionType', description?: string | null, kind?: IntrospectionTypeKind | null, name?: string | null } | null }> } | null } | null }> }> } | null };
+export type Bvr_Cli_FieldRecordsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', graphs: Array<{ __typename?: 'Service', id: string, name: string, variants: Array<{ __typename?: 'GraphVariant', graphId: string, latestPublication?: { __typename?: 'SchemaTag', id: string, createdAt: string | number, publishedAt: string | number, diffToPrevious?: { __typename?: 'SchemaDiff', tag?: string | null, changes: Array<{ __typename?: 'Change', category: ChangeCategory, severity: ChangeSeverity, description: string, childNode?: { __typename?: 'NamedIntrospectionValue', description?: string | null, name?: string | null, printedType?: string | null } | null, parentNode?: { __typename?: 'NamedIntrospectionType', description?: string | null, kind?: IntrospectionTypeKind | null, name?: string | null } | null }> } | null } | null }> }> } | null };
 
 export type Bvr_Cli_FieldUsageQueryVariables = Exact<{
   from: Scalars['Timestamp']['input'];
@@ -16709,14 +16765,7 @@ export type Bvr_Cli_FieldUsageQueryVariables = Exact<{
 }>;
 
 
-export type Bvr_Cli_FieldUsageQuery = { __typename?: 'Query', account?: { __typename?: 'Account', graphs: Array<{ __typename?: 'Service', id: string, name: string, statsWindow?: { __typename?: 'ServiceStatsWindow', fieldUsage: Array<{ __typename?: 'ServiceFieldUsageRecord', timestamp: any, groupBy: { __typename?: 'ServiceFieldUsageDimensions', parentType?: string | null, fieldName?: string | null, schemaTag?: string | null }, metrics: { __typename?: 'ServiceFieldUsageMetrics', estimatedExecutionCount: any } }> } | null }> } | null };
-
-export type Bvr_Cli_OdysseyStatsQueryVariables = Exact<{
-  accountId: Scalars['ID']['input'];
-}>;
-
-
-export type Bvr_Cli_OdysseyStatsQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', id: string, memberships?: Array<{ __typename?: 'AccountMembership', user: { __typename?: 'User', fullName: string, lastAuthenticatedAt?: any | null, email?: string | null, emailVerified: boolean, type: UserType, odysseyCertifications: Array<{ __typename?: 'OdysseyCertification', earnedAt: any, certificationId: string }>, odysseyCourses?: Array<{ __typename?: 'OdysseyCourse', completedAt?: any | null, enrolledAt?: any | null, id: string }> | null } }> | null } | null };
+export type Bvr_Cli_FieldUsageQuery = { __typename?: 'Query', account?: { __typename?: 'Account', graphs: Array<{ __typename?: 'Service', id: string, name: string, statsWindow?: { __typename?: 'ServiceStatsWindow', fieldUsage: Array<{ __typename?: 'ServiceFieldUsageRecord', timestamp: string | number, groupBy: { __typename?: 'ServiceFieldUsageDimensions', parentType?: string | null, fieldName?: string | null, schemaTag?: string | null }, metrics: { __typename?: 'ServiceFieldUsageMetrics', estimatedExecutionCount: any } }> } | null }> } | null };
 
 export type Bvr_Cli_OperationCountsQueryVariables = Exact<{
   accountId: Scalars['ID']['input'];
@@ -16726,7 +16775,7 @@ export type Bvr_Cli_OperationCountsQueryVariables = Exact<{
 }>;
 
 
-export type Bvr_Cli_OperationCountsQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', statsWindow?: { __typename?: 'AccountStatsWindow', billingUsageStats: Array<{ __typename?: 'AccountBillingUsageStatsRecord', timestamp: any, groupBy: { __typename?: 'AccountBillingUsageStatsDimensions', serviceId?: string | null, schemaTag?: string | null }, metrics: { __typename?: 'AccountBillingUsageStatsMetrics', operationCount: any } }> } | null } | null };
+export type Bvr_Cli_OperationCountsQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', statsWindow?: { __typename?: 'AccountStatsWindow', billingUsageStats: Array<{ __typename?: 'AccountBillingUsageStatsRecord', timestamp: string | number, groupBy: { __typename?: 'AccountBillingUsageStatsDimensions', serviceId?: string | null, schemaTag?: string | null }, metrics: { __typename?: 'AccountBillingUsageStatsMetrics', operationCount: any } }> } | null } | null };
 
 export type Bvr_Cli_SchemaChecksQueryVariables = Exact<{
   accountId: Scalars['ID']['input'];
@@ -16735,7 +16784,7 @@ export type Bvr_Cli_SchemaChecksQueryVariables = Exact<{
 }>;
 
 
-export type Bvr_Cli_SchemaChecksQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', id: string, registryStatsWindow?: { __typename?: 'RegistryStatsWindow', schemaCheckStats: Array<{ __typename?: 'AccountChecksStatsRecord', timestamp: any, metrics: { __typename?: 'AccountChecksStatsMetrics', totalFailedChecks: any, totalSuccessfulChecks: any } }> } | null } | null };
+export type Bvr_Cli_SchemaChecksQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', id: string, registryStatsWindow?: { __typename?: 'RegistryStatsWindow', schemaCheckStats: Array<{ __typename?: 'AccountChecksStatsRecord', timestamp: string | number, metrics: { __typename?: 'AccountChecksStatsMetrics', totalFailedChecks: any, totalSuccessfulChecks: any } }> } | null } | null };
 
 export type Bvr_Cli_SchemaPublishesQueryVariables = Exact<{
   accountId: Scalars['ID']['input'];
@@ -16744,14 +16793,21 @@ export type Bvr_Cli_SchemaPublishesQueryVariables = Exact<{
 }>;
 
 
-export type Bvr_Cli_SchemaPublishesQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', id: string, registryStatsWindow?: { __typename?: 'RegistryStatsWindow', schemaPublishStats: Array<{ __typename?: 'AccountPublishesStatsRecord', timestamp: any, metrics: { __typename?: 'AccountPublishesStatsMetrics', totalPublishes: any } }> } | null } | null };
+export type Bvr_Cli_SchemaPublishesQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', id: string, registryStatsWindow?: { __typename?: 'RegistryStatsWindow', schemaPublishStats: Array<{ __typename?: 'AccountPublishesStatsRecord', timestamp: string | number, metrics: { __typename?: 'AccountPublishesStatsMetrics', totalPublishes: any } }> } | null } | null };
+
+export type Bvr_Cli_UserStatsQueryVariables = Exact<{
+  accountId: Scalars['ID']['input'];
+}>;
+
+
+export type Bvr_Cli_UserStatsQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', id: string, memberships?: Array<{ __typename?: 'AccountMembership', user: { __typename?: 'User', fullName: string, lastAuthenticatedAt?: string | number | null, email?: string | null, emailVerified: boolean, type: UserType, odysseyCertifications: Array<{ __typename?: 'OdysseyCertification', earnedAt: string | number, certificationId: string }>, odysseyCourses?: Array<{ __typename?: 'OdysseyCourse', completedAt?: string | number | null, enrolledAt?: string | number | null, id: string }> | null } }> | null } | null };
 
 export type Bvr_Cli_VariantsInfoQueryVariables = Exact<{
   accountId: Scalars['ID']['input'];
 }>;
 
 
-export type Bvr_Cli_VariantsInfoQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', id: string, graphs: Array<{ __typename?: 'Service', variants: Array<{ __typename?: 'GraphVariant', name: string, id: string, graphId: string, hasManagedSubgraphs?: boolean | null, hasSupergraphSchema: boolean, derivedVariantCount: number, isContract?: boolean | null, isProtected: boolean, compositionVersion?: string | null, isPublic: boolean, isPubliclyListed: boolean, sourceVariant?: { __typename?: 'GraphVariant', name: string } | null, latestPublication?: { __typename?: 'SchemaTag', publishedAt: any } | null, latestApprovedLaunch?: { __typename?: 'Launch', completedAt?: any | null } | null }> }> } | null };
+export type Bvr_Cli_VariantsInfoQuery = { __typename?: 'Query', organization?: { __typename?: 'Account', id: string, graphs: Array<{ __typename?: 'Service', proposals: { __typename?: 'ProposalsResult', totalCount: number, proposals: Array<{ __typename?: 'Proposal', id: string, status: ProposalStatus, sourceVariant: { __typename?: 'GraphVariant', id: string } }> }, variants: Array<{ __typename?: 'GraphVariant', name: string, id: string, graphId: string, hasManagedSubgraphs?: boolean | null, hasSupergraphSchema: boolean, derivedVariantCount: number, isContract?: boolean | null, isProtected: boolean, compositionVersion?: string | null, isPublic: boolean, isPubliclyListed: boolean, launchHistoryLength?: any | null, sourceVariant?: { __typename?: 'GraphVariant', name: string } | null, latestPublication?: { __typename?: 'SchemaTag', publishedAt: string | number } | null, latestApprovedLaunch?: { __typename?: 'Launch', completedAt?: string | number | null, build?: { __typename?: 'Build', result?: { __typename: 'BuildFailure' } | { __typename: 'BuildSuccess', coreSchema: { __typename?: 'CoreSchema', coreDocument: any } } | null } | null } | null, subgraphs?: Array<{ __typename?: 'FederatedImplementingService', name: string }> | null, persistedQueryList?: { __typename?: 'PersistedQueryList', operations: { __typename?: 'PersistedQueryConnection', edges: Array<{ __typename?: 'PersistedQueryEdge', node: { __typename?: 'PersistedQuery', id: string } }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean } } } | null }> }> } | null };
 
 
 export const Bvr_Cli_ValidateTokenDocument = gql`
@@ -16890,31 +16946,6 @@ export const Bvr_Cli_FieldUsageDocument = gql`
   }
 }
     `;
-export const Bvr_Cli_OdysseyStatsDocument = gql`
-    query BVR_CLI_OdysseyStats($accountId: ID!) {
-  organization(id: $accountId) {
-    id
-    memberships {
-      user {
-        fullName
-        lastAuthenticatedAt
-        email
-        emailVerified
-        type
-        odysseyCertifications {
-          earnedAt
-          certificationId
-        }
-        odysseyCourses {
-          completedAt
-          enrolledAt
-          id
-        }
-      }
-    }
-  }
-}
-    `;
 export const Bvr_Cli_OperationCountsDocument = gql`
     query BVR_CLI_OperationCounts($accountId: ID!, $from: Timestamp!, $resolution: Resolution, $to: Timestamp) {
   organization(id: $accountId) {
@@ -16964,11 +16995,46 @@ export const Bvr_Cli_SchemaPublishesDocument = gql`
   }
 }
     `;
+export const Bvr_Cli_UserStatsDocument = gql`
+    query BVR_CLI_UserStats($accountId: ID!) {
+  organization(id: $accountId) {
+    id
+    memberships {
+      user {
+        fullName
+        lastAuthenticatedAt
+        email
+        emailVerified
+        type
+        odysseyCertifications {
+          earnedAt
+          certificationId
+        }
+        odysseyCourses {
+          completedAt
+          enrolledAt
+          id
+        }
+      }
+    }
+  }
+}
+    `;
 export const Bvr_Cli_VariantsInfoDocument = gql`
     query BVR_CLI_VariantsInfo($accountId: ID!) {
   organization(id: $accountId) {
     id
     graphs {
+      proposals {
+        totalCount
+        proposals {
+          id
+          status
+          sourceVariant {
+            id
+          }
+        }
+      }
       variants {
         name
         id
@@ -16989,6 +17055,32 @@ export const Bvr_Cli_VariantsInfoDocument = gql`
         }
         latestApprovedLaunch {
           completedAt
+          build {
+            result {
+              __typename
+              ... on BuildSuccess {
+                coreSchema {
+                  coreDocument
+                }
+              }
+            }
+          }
+        }
+        launchHistoryLength
+        subgraphs {
+          name
+        }
+        persistedQueryList {
+          operations {
+            edges {
+              node {
+                id
+              }
+            }
+            pageInfo {
+              hasNextPage
+            }
+          }
         }
       }
     }
@@ -17021,9 +17113,6 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     BVR_CLI_FieldUsage(variables: Bvr_Cli_FieldUsageQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<Bvr_Cli_FieldUsageQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<Bvr_Cli_FieldUsageQuery>(Bvr_Cli_FieldUsageDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BVR_CLI_FieldUsage', 'query', variables);
     },
-    BVR_CLI_OdysseyStats(variables: Bvr_Cli_OdysseyStatsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<Bvr_Cli_OdysseyStatsQuery> {
-      return withWrapper((wrappedRequestHeaders) => client.request<Bvr_Cli_OdysseyStatsQuery>(Bvr_Cli_OdysseyStatsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BVR_CLI_OdysseyStats', 'query', variables);
-    },
     BVR_CLI_OperationCounts(variables: Bvr_Cli_OperationCountsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<Bvr_Cli_OperationCountsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<Bvr_Cli_OperationCountsQuery>(Bvr_Cli_OperationCountsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BVR_CLI_OperationCounts', 'query', variables);
     },
@@ -17032,6 +17121,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     BVR_CLI_SchemaPublishes(variables: Bvr_Cli_SchemaPublishesQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<Bvr_Cli_SchemaPublishesQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<Bvr_Cli_SchemaPublishesQuery>(Bvr_Cli_SchemaPublishesDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BVR_CLI_SchemaPublishes', 'query', variables);
+    },
+    BVR_CLI_UserStats(variables: Bvr_Cli_UserStatsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<Bvr_Cli_UserStatsQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<Bvr_Cli_UserStatsQuery>(Bvr_Cli_UserStatsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BVR_CLI_UserStats', 'query', variables);
     },
     BVR_CLI_VariantsInfo(variables: Bvr_Cli_VariantsInfoQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<Bvr_Cli_VariantsInfoQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<Bvr_Cli_VariantsInfoQuery>(Bvr_Cli_VariantsInfoDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BVR_CLI_VariantsInfo', 'query', variables);
