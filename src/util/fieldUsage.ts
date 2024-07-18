@@ -1,8 +1,9 @@
 import { gql } from "graphql-request";
-import { Resolution, type Sdk } from "../gql/sdk";
+import { Resolution } from "../gql/sdk";
 import { createObjectCsvWriter } from "csv-writer";
-import type { Command } from "clipanion";
 import { cleanTimestamp } from "./timestamps";
+import { GenerateReportOptions } from "../types";
+import { writeReports } from "./reportWriter";
 
 const FIELD_USAGE_QUERY = gql`
 query BVR_CLI_FieldUsage($from: Timestamp!, $accountId: ID!, $resolution: Resolution, $to: Timestamp) {
@@ -29,8 +30,9 @@ query BVR_CLI_FieldUsage($from: Timestamp!, $accountId: ID!, $resolution: Resolu
   }
 }`
 
-export const generateFieldUsageReport = async (command: Command, client: Sdk, accountId: string, from: number) => {
-  const writer = createObjectCsvWriter({
+export const generateFieldUsageReport = async (options: GenerateReportOptions) => {
+    const { command, client, accountId, from } = options;
+    const writer = createObjectCsvWriter({
     path: `${accountId}-field-usage.csv`,
     header: [
       { id: "timestamp", title: "Timestamp" },
@@ -65,7 +67,6 @@ export const generateFieldUsageReport = async (command: Command, client: Sdk, ac
     command.context.stdout.write("No records found for field usage.\n")
     return
   }
-
-  await writer.writeRecords(records)
+  await writeReports(options, records, writer);
   command.context.stdout.write("Field usage report generated.\n")
 }

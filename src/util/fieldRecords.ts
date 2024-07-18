@@ -3,6 +3,8 @@ import { Resolution, type Sdk } from "../gql/sdk";
 import { createObjectCsvWriter } from "csv-writer";
 import type { Command } from "clipanion";
 import { cleanTimestamp } from "./timestamps";
+import { GenerateReportOptions } from "../types";
+import { writeReports } from "./reportWriter";
 
 const FIELD_RECORDS_QUERY = gql`
 query BVR_CLI_FieldRecords($accountId: ID!, $includeDeleted: Boolean) {
@@ -41,7 +43,8 @@ query BVR_CLI_FieldRecords($accountId: ID!, $includeDeleted: Boolean) {
 }`
 
 
-export const generateFieldRecordsReport = async (command: Command, client: Sdk, accountId: string) => {
+export const generateFieldRecordsReport = async (options: GenerateReportOptions) => {
+  const { command, client, accountId } = options;
   const writer = createObjectCsvWriter({
     path: `${accountId}-field-records.csv`,
     header: [
@@ -84,6 +87,7 @@ export const generateFieldRecordsReport = async (command: Command, client: Sdk, 
     return
   }
 
-  await writer.writeRecords(records)
+
+  await writeReports(options, records, writer);
   command.context.stdout.write("Field records report generated.\n")
 }

@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const clipanion_1 = require("clipanion");
+const typanion_1 = require("typanion");
 const graphql_request_1 = require("graphql-request");
 const prompts_1 = require("@inquirer/prompts");
 const sdk_1 = require("../gql/sdk");
@@ -54,6 +55,9 @@ class ConfigCommand extends clipanion_1.Command {
         this.apiKey = clipanion_1.Option.String('-k,--api-key');
         this.sudo = clipanion_1.Option.Boolean('-s,--sudo', {
             hidden: true,
+        });
+        this.output = clipanion_1.Option.String('--output', 'csv', {
+            validator: (0, typanion_1.isEnum)(['csv', 'json', 'otel'])
         });
     }
     execute() {
@@ -134,17 +138,25 @@ class ConfigCommand extends clipanion_1.Command {
             });
             const offset = parseInt(inputOffset);
             this.context.stdout.write('Generating reports...\n');
-            let res = yield Promise.allSettled([
-                (0, clientUsage_1.generateClientUsageReport)(this, sdk, accountId, offset),
-                (0, fieldChanges_1.generateFieldChangesReport)(this, sdk, accountId),
-                (0, fieldRecords_1.generateFieldRecordsReport)(this, sdk, accountId),
-                (0, fieldUsage_1.generateFieldUsageReport)(this, sdk, accountId, offset),
-                (0, odyssey_1.generateOdysseyReport)(this, sdk, accountId),
-                (0, operationCounts_1.generateOperationCountsReport)(this, sdk, accountId, offset),
-                (0, schemaChecks_1.generateSchemaChecksReport)(this, sdk, accountId, offset),
-                (0, schemaPublishes_1.generateSchemaPublishesReport)(this, sdk, accountId, offset),
-                (0, variants_1.generateVariantsReport)(this, sdk, accountId),
-            ]);
+            const reportGenerators = [
+                clientUsage_1.generateClientUsageReport,
+                fieldChanges_1.generateFieldChangesReport,
+                fieldRecords_1.generateFieldRecordsReport,
+                fieldUsage_1.generateFieldUsageReport,
+                odyssey_1.generateOdysseyReport,
+                operationCounts_1.generateOperationCountsReport,
+                schemaChecks_1.generateSchemaChecksReport,
+                schemaPublishes_1.generateSchemaPublishesReport,
+                variants_1.generateVariantsReport,
+            ];
+            const reportPromises = reportGenerators.map((fn) => fn({
+                command: this,
+                client: sdk,
+                accountId,
+                from: offset,
+                output: this.output,
+            }));
+            let res = yield Promise.allSettled(reportPromises);
             this.context.stdout.write(`\u2714 ${res.filter((promise) => promise.status === 'fulfilled').length} report(s) generated.\n`);
             this.context.stdout.write(`\u2716 ${res.filter((promise) => promise.status === 'rejected').length} report(s) failed.\n`);
         });

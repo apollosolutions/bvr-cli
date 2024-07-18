@@ -3,6 +3,8 @@ import { Resolution, type Sdk } from "../gql/sdk";
 import { createObjectCsvWriter } from "csv-writer";
 import type { Command } from "clipanion";
 import { cleanTimestamp, offsetToTimestamp } from "./timestamps";
+import { GenerateReportOptions } from "../types";
+import { writeReports } from "./reportWriter";
 
 const SCHEMA_PUBLISHES_QUERY = gql`
 query BVR_CLI_SchemaPublishes($accountId: ID!, $from: Timestamp!, $resolution: Resolution) {
@@ -20,7 +22,8 @@ query BVR_CLI_SchemaPublishes($accountId: ID!, $from: Timestamp!, $resolution: R
   }
 }`
 
-export const generateSchemaPublishesReport = async (command: Command, client: Sdk, accountId: string, from: number) => {
+export const generateSchemaPublishesReport = async (options: GenerateReportOptions) => {
+  const { command, client, accountId, from } = options;
   const writer = createObjectCsvWriter({
     path: `${accountId}-schema-publishes.csv`,
     header: [
@@ -47,7 +50,6 @@ export const generateSchemaPublishesReport = async (command: Command, client: Sd
     return
   }
 
-  await writer.writeRecords(records)
-
+  await writeReports(options, records, writer);
   command.context.stdout.write("Schema publishes report generated.\n")
 }

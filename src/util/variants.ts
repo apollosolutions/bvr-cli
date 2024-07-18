@@ -2,6 +2,8 @@ import { gql } from "graphql-request";
 import { Resolution, type Sdk } from "../gql/sdk";
 import { createObjectCsvWriter } from "csv-writer";
 import type { Command } from "clipanion";
+import { GenerateReportOptions } from "../types";
+import { writeReports } from "./reportWriter";
 
 const VARIANTS_INFO_QUERY = gql`
 query BVR_CLI_VariantsInfo($accountId: ID!) {
@@ -34,7 +36,8 @@ query BVR_CLI_VariantsInfo($accountId: ID!) {
   }
 }`
 
-export const generateVariantsReport = async (command: Command, client: Sdk, accountId: string) => {
+export const generateVariantsReport = async (options: GenerateReportOptions) => {
+    const { command, client, accountId } = options;
     const writer = createObjectCsvWriter({
         path: `${accountId}-variants.csv`,
         header: [
@@ -85,6 +88,6 @@ export const generateVariantsReport = async (command: Command, client: Sdk, acco
         return
     }
 
-    await writer.writeRecords(records)
+    await writeReports(options, records, writer);
     command.context.stdout.write("Variants report generated.\n")
 }

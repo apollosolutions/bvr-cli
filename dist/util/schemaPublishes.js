@@ -14,6 +14,7 @@ const graphql_request_1 = require("graphql-request");
 const sdk_1 = require("../gql/sdk");
 const csv_writer_1 = require("csv-writer");
 const timestamps_1 = require("./timestamps");
+const reportWriter_1 = require("./reportWriter");
 const SCHEMA_PUBLISHES_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_SchemaPublishes($accountId: ID!, $from: Timestamp!, $resolution: Resolution) {
   organization(id: $accountId) {
@@ -29,8 +30,9 @@ query BVR_CLI_SchemaPublishes($accountId: ID!, $from: Timestamp!, $resolution: R
     }
   }
 }`;
-const generateSchemaPublishesReport = (command, client, accountId, from) => __awaiter(void 0, void 0, void 0, function* () {
+const generateSchemaPublishesReport = (options) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
+    const { command, client, accountId, from } = options;
     const writer = (0, csv_writer_1.createObjectCsvWriter)({
         path: `${accountId}-schema-publishes.csv`,
         header: [
@@ -53,7 +55,7 @@ const generateSchemaPublishesReport = (command, client, accountId, from) => __aw
         command.context.stdout.write("No records found for schema publishes.\n");
         return;
     }
-    yield writer.writeRecords(records);
+    yield (0, reportWriter_1.writeReports)(options, records, writer);
     command.context.stdout.write("Schema publishes report generated.\n");
 });
 exports.generateSchemaPublishesReport = generateSchemaPublishesReport;

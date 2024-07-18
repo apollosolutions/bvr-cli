@@ -1,4 +1,5 @@
 import { Command, Option } from 'clipanion';
+import { isEnum } from 'typanion';
 import { GraphQLClient, gql } from 'graphql-request';
 import { select, input, password, confirm } from '@inquirer/prompts';
 import { getSdk } from '../gql/sdk';
@@ -46,6 +47,10 @@ export default class ConfigCommand extends Command {
 
   sudo = Option.Boolean('-s,--sudo', {
     hidden: true,
+  })
+
+  output = Option.String('--output', 'csv', {
+    validator: isEnum([ 'csv', 'json', 'otel' ])
   })
 
   static usage = Command.Usage({
@@ -138,18 +143,27 @@ export default class ConfigCommand extends Command {
     const offset = parseInt(inputOffset)
 
     this.context.stdout.write('Generating reports...\n')
-    let res = await Promise.allSettled([
-      generateClientUsageReport(this, sdk, accountId, offset),
-      generateFieldChangesReport(this, sdk, accountId),
-      generateFieldRecordsReport(this, sdk, accountId),
-      generateFieldUsageReport(this, sdk, accountId, offset),
-      generateOdysseyReport(this, sdk, accountId),
-      generateOperationCountsReport(this, sdk, accountId, offset),
-      generateSchemaChecksReport(this, sdk, accountId, offset),
-      generateSchemaPublishesReport(this, sdk, accountId, offset),
-      generateVariantsReport(this, sdk, accountId),
-    ])
-
+    const reportGenerators = [
+        generateClientUsageReport,
+        generateFieldChangesReport,
+        generateFieldRecordsReport,
+        generateFieldUsageReport,
+        generateOdysseyReport,
+        generateOperationCountsReport,
+        generateSchemaChecksReport,
+        generateSchemaPublishesReport,
+        generateVariantsReport,
+    ];
+    const reportPromises = reportGenerators.map((fn) =>
+        fn({
+            command: this,
+            client: sdk,
+            accountId,
+            from: offset,
+            output: this.output,
+        }),
+    );
+    let res = await Promise.allSettled(reportPromises);
     this.context.stdout.write(`\u2714 ${res.filter((promise) => promise.status === 'fulfilled').length} report(s) generated.\n`)
     this.context.stdout.write(`\u2716 ${res.filter((promise) => promise.status === 'rejected').length} report(s) failed.\n`)
   }

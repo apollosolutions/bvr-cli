@@ -4,6 +4,8 @@ import { createObjectCsvWriter } from "csv-writer";
 import type { Command } from "clipanion";
 import { cleanTimestamp, offsetToTimestamp } from "./timestamps";
 import { off } from "process";
+import { GenerateReportOptions } from "../types";
+import { writeReports } from "./reportWriter";
 
 const SCHEMA_CHECKS_QUERY = gql`
 query BVR_CLI_SchemaChecks($accountId: ID!, $from: Timestamp!, $resolution: Resolution) {
@@ -22,8 +24,9 @@ query BVR_CLI_SchemaChecks($accountId: ID!, $from: Timestamp!, $resolution: Reso
 }
 `
 
-export const generateSchemaChecksReport = async (command: Command, client: Sdk, accountId: string, from: number) => {
-  const writer = createObjectCsvWriter({
+export const generateSchemaChecksReport = async (options: GenerateReportOptions) => {
+    const { command, client, accountId, from } = options;
+    const writer = createObjectCsvWriter({
     path: `${accountId}-schema-checks.csv`,
     header: [
       { id: "timestamp", title: "Timestamp" },
@@ -51,6 +54,6 @@ export const generateSchemaChecksReport = async (command: Command, client: Sdk, 
     return
   }
 
-  await writer.writeRecords(records)
+  await writeReports(options, records, writer);
   command.context.stdout.write("Schema check report generated.\n")
 }
