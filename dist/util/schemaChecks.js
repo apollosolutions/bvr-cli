@@ -14,6 +14,7 @@ const graphql_request_1 = require("graphql-request");
 const sdk_1 = require("../gql/sdk");
 const csv_writer_1 = require("csv-writer");
 const timestamps_1 = require("./timestamps");
+const reportWriter_1 = require("./reportWriter");
 const SCHEMA_CHECKS_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_SchemaChecks($accountId: ID!, $from: Timestamp!, $resolution: Resolution) {
   organization(id: $accountId) {
@@ -30,8 +31,9 @@ query BVR_CLI_SchemaChecks($accountId: ID!, $from: Timestamp!, $resolution: Reso
   }
 }
 `;
-const generateSchemaChecksReport = (command, client, accountId, from) => __awaiter(void 0, void 0, void 0, function* () {
+const generateSchemaChecksReport = (options) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
+    const { command, client, accountId, from } = options;
     const writer = (0, csv_writer_1.createObjectCsvWriter)({
         path: `${accountId}-schema-checks.csv`,
         header: [
@@ -56,7 +58,7 @@ const generateSchemaChecksReport = (command, client, accountId, from) => __await
         command.context.stdout.write("No records found for schema checks.\n");
         return;
     }
-    yield writer.writeRecords(records);
+    yield (0, reportWriter_1.writeReports)(options, records, writer);
     command.context.stdout.write("Schema check report generated.\n");
 });
 exports.generateSchemaChecksReport = generateSchemaChecksReport;

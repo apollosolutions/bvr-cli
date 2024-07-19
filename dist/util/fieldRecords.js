@@ -13,6 +13,7 @@ exports.generateFieldRecordsReport = void 0;
 const graphql_request_1 = require("graphql-request");
 const csv_writer_1 = require("csv-writer");
 const timestamps_1 = require("./timestamps");
+const reportWriter_1 = require("./reportWriter");
 const FIELD_RECORDS_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_FieldRecords($accountId: ID!, $includeDeleted: Boolean) {
   account(id: $accountId) {
@@ -48,8 +49,9 @@ query BVR_CLI_FieldRecords($accountId: ID!, $includeDeleted: Boolean) {
     }
   }
 }`;
-const generateFieldRecordsReport = (command, client, accountId) => __awaiter(void 0, void 0, void 0, function* () {
+const generateFieldRecordsReport = (options) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    const { command, client, accountId } = options;
     const writer = (0, csv_writer_1.createObjectCsvWriter)({
         path: `${accountId}-field-records.csv`,
         header: [
@@ -91,7 +93,7 @@ const generateFieldRecordsReport = (command, client, accountId) => __awaiter(voi
         command.context.stdout.write("No records found for field records.\n");
         return;
     }
-    yield writer.writeRecords(records);
+    yield (0, reportWriter_1.writeReports)(options, records, writer);
     command.context.stdout.write("Field records report generated.\n");
 });
 exports.generateFieldRecordsReport = generateFieldRecordsReport;

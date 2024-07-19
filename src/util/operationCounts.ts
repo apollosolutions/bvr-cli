@@ -3,6 +3,8 @@ import { Resolution, type Sdk } from "../gql/sdk";
 import { createObjectCsvWriter } from "csv-writer";
 import type { Command } from "clipanion";
 import { cleanTimestamp } from "./timestamps";
+import { GenerateReportOptions } from "../types";
+import { writeReports } from "./reportWriter";
 
 const OPERATION_COUNTS = gql`
 query BVR_CLI_OperationCounts($accountId: ID!, $from: Timestamp!, $resolution: Resolution, $to: Timestamp) {
@@ -23,7 +25,8 @@ query BVR_CLI_OperationCounts($accountId: ID!, $from: Timestamp!, $resolution: R
   }
 }`
 
-export const generateOperationCountsReport = async (command: Command, client: Sdk, accountId: string, from: number) => {
+export const generateOperationCountsReport = async (options: GenerateReportOptions) => {
+  const { command, client, accountId, from } = options;
   const writer = createObjectCsvWriter({
     path: `${accountId}-operation-counts.csv`,
     header: [
@@ -53,6 +56,7 @@ export const generateOperationCountsReport = async (command: Command, client: Sd
     return
   }
 
-  await writer.writeRecords(records)
+
+  await writeReports(options, records, writer);
   command.context.stdout.write("Operation counts report generated.\n")
 }

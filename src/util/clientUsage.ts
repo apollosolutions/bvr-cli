@@ -3,6 +3,8 @@ import { Resolution, type Sdk } from "../gql/sdk";
 import { createObjectCsvWriter } from "csv-writer";
 import type { Command } from "clipanion";
 import { cleanTimestamp } from "./timestamps";
+import { GenerateReportOptions } from "../types";
+import { writeReports } from "./reportWriter";
 
 const CLIENT_USAGE_QUERY = gql`
 query BVR_CLI_ClientUsage($from: Timestamp!, $accountId: ID!, $resolution: Resolution, $to: Timestamp) {
@@ -28,8 +30,9 @@ query BVR_CLI_ClientUsage($from: Timestamp!, $accountId: ID!, $resolution: Resol
 }
 `
 
-export const generateClientUsageReport = async (command: Command, client: Sdk, accountId: string, from: number) => {
-  const writer = createObjectCsvWriter({
+export const generateClientUsageReport = async (options: GenerateReportOptions) => {
+    const { command, client, accountId, from } = options;
+    const writer = createObjectCsvWriter({
     path: `${accountId}-client-usage.csv`,
     header: [
       { id: "name", title: "Graph Name" },
@@ -62,6 +65,6 @@ export const generateClientUsageReport = async (command: Command, client: Sdk, a
     return
   }
 
-  await writer.writeRecords(records)
+  await writeReports(options, records, writer);
   command.context.stdout.write("Client usage report generated.\n")
 }

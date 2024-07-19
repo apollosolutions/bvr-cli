@@ -2,6 +2,8 @@ import { gql } from "graphql-request";
 import { Resolution, type Sdk } from "../gql/sdk";
 import { createObjectCsvWriter } from "csv-writer";
 import type { Command } from "clipanion";
+import { GenerateReportOptions } from "../types";
+import { writeReports } from "./reportWriter";
 
 const ODYSSEY_QUERY = gql`
 query BVR_CLI_OdysseyStats($accountId: ID!) {
@@ -27,8 +29,9 @@ query BVR_CLI_OdysseyStats($accountId: ID!) {
     }
   }
 }`
-export const generateOdysseyReport = async (command: Command, client: Sdk, accountId: string) => {
-  const writer = createObjectCsvWriter({
+export const generateOdysseyReport = async (options: GenerateReportOptions) => {
+    const { command, client, accountId, from } = options;
+    const writer = createObjectCsvWriter({
     path: `${accountId}-odyssey.csv`,
     header: [
       { id: "fullName", title: "Full Name" },
@@ -62,6 +65,7 @@ export const generateOdysseyReport = async (command: Command, client: Sdk, accou
     return
   }
 
-  await writer.writeRecords(records)
+
+  await writeReports(options, records, writer);
   command.context.stdout.write("Odyssey report generated.\n")
 }

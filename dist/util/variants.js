@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateVariantsReport = void 0;
 const graphql_request_1 = require("graphql-request");
 const csv_writer_1 = require("csv-writer");
+const reportWriter_1 = require("./reportWriter");
 const VARIANTS_INFO_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_VariantsInfo($accountId: ID!) {
   organization(id: $accountId) {
@@ -42,8 +43,9 @@ query BVR_CLI_VariantsInfo($accountId: ID!) {
     }
   }
 }`;
-const generateVariantsReport = (command, client, accountId) => __awaiter(void 0, void 0, void 0, function* () {
+const generateVariantsReport = (options) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
+    const { command, client, accountId } = options;
     const writer = (0, csv_writer_1.createObjectCsvWriter)({
         path: `${accountId}-variants.csv`,
         header: [
@@ -92,7 +94,7 @@ const generateVariantsReport = (command, client, accountId) => __awaiter(void 0,
         command.context.stdout.write("No records found for variants.\n");
         return;
     }
-    yield writer.writeRecords(records);
+    yield (0, reportWriter_1.writeReports)(options, records, writer);
     command.context.stdout.write("Variants report generated.\n");
 });
 exports.generateVariantsReport = generateVariantsReport;

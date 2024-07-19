@@ -14,6 +14,7 @@ const graphql_request_1 = require("graphql-request");
 const sdk_1 = require("../gql/sdk");
 const csv_writer_1 = require("csv-writer");
 const timestamps_1 = require("./timestamps");
+const reportWriter_1 = require("./reportWriter");
 const FIELD_USAGE_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_FieldUsage($from: Timestamp!, $accountId: ID!, $resolution: Resolution, $to: Timestamp) {
   account(id: $accountId) {
@@ -38,8 +39,9 @@ query BVR_CLI_FieldUsage($from: Timestamp!, $accountId: ID!, $resolution: Resolu
     }
   }
 }`;
-const generateFieldUsageReport = (command, client, accountId, from) => __awaiter(void 0, void 0, void 0, function* () {
+const generateFieldUsageReport = (options) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    const { command, client, accountId, from } = options;
     const writer = (0, csv_writer_1.createObjectCsvWriter)({
         path: `${accountId}-field-usage.csv`,
         header: [
@@ -72,7 +74,7 @@ const generateFieldUsageReport = (command, client, accountId, from) => __awaiter
         command.context.stdout.write("No records found for field usage.\n");
         return;
     }
-    yield writer.writeRecords(records);
+    yield (0, reportWriter_1.writeReports)(options, records, writer);
     command.context.stdout.write("Field usage report generated.\n");
 });
 exports.generateFieldUsageReport = generateFieldUsageReport;
