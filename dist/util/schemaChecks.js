@@ -11,10 +11,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateSchemaChecksReport = void 0;
 const graphql_request_1 = require("graphql-request");
-const sdk_1 = require("../gql/sdk");
 const csv_writer_1 = require("csv-writer");
 const timestamps_1 = require("./timestamps");
 const reportWriter_1 = require("./reportWriter");
+const sdk_1 = require("../gql/sdk");
+// eslint-disable-next-line no-unused-vars
 const SCHEMA_CHECKS_QUERY = (0, graphql_request_1.gql) `
 query BVR_CLI_SchemaChecks($accountId: ID!, $from: Timestamp!, $resolution: Resolution) {
   organization(id: $accountId) {
@@ -42,18 +43,20 @@ const generateSchemaChecksReport = (options) => __awaiter(void 0, void 0, void 0
             { id: "totalSuccessfulChecks", title: "Total Successful Checks" }
         ]
     });
-    let res = yield client.BVR_CLI_SchemaChecks({
+    const res = yield client.BVR_CLI_SchemaChecks({
         accountId,
         from: (0, timestamps_1.offsetToTimestamp)(from),
         resolution: sdk_1.Resolution.R1D,
     });
-    let records = (_b = (_a = res.organization) === null || _a === void 0 ? void 0 : _a.registryStatsWindow) === null || _b === void 0 ? void 0 : _b.schemaCheckStats.map(stat => {
-        return {
-            timestamp: (0, timestamps_1.cleanTimestamp)(stat.timestamp),
-            totalFailedChecks: stat.metrics.totalFailedChecks,
-            totalSuccessfulChecks: stat.metrics.totalSuccessfulChecks
-        };
-    }).flatMap((f) => (f ? [f] : []));
+    const records = (_b = (_a = res.organization) === null || _a === void 0 ? void 0 : _a.registryStatsWindow) === null || _b === void 0 ? void 0 : _b.schemaCheckStats.map(stat => ({
+        timestamp: (0, timestamps_1.cleanTimestamp)(stat.timestamp),
+        totalFailedChecks: stat.metrics.totalFailedChecks,
+        totalSuccessfulChecks: stat.metrics.totalSuccessfulChecks
+    })).flatMap((f) => (f ? [f] : []));
+    if (!records) {
+        command.context.stdout.write("No records found for schema checks.\n");
+        return;
+    }
     if (!records) {
         command.context.stdout.write("No records found for schema checks.\n");
         return;

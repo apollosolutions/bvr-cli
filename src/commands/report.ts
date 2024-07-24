@@ -1,18 +1,20 @@
 import { Command, Option } from 'clipanion';
 import { isEnum } from 'typanion';
 import { GraphQLClient, gql } from 'graphql-request';
-import { select, input, password, confirm } from '@inquirer/prompts';
+import { select, input, password } from '@inquirer/prompts';
 import { getSdk } from '../gql/sdk';
 import { generateClientUsageReport } from '../util/clientUsage';
 import { generateFieldChangesReport } from '../util/fieldChanges';
 import { generateFieldRecordsReport } from '../util/fieldRecords';
 import { generateFieldUsageReport } from '../util/fieldUsage';
-import { generateOdysseyReport } from '../util/odyssey';
+import { generateUserReport } from '../util/users';
 import { generateOperationCountsReport } from '../util/operationCounts';
 import { generateSchemaChecksReport } from '../util/schemaChecks';
 import { generateSchemaPublishesReport } from '../util/schemaPublishes';
 import { generateVariantsReport } from '../util/variants';
+import { chooseAccountFromToken } from '../util/chooseAccount';
 
+// eslint-disable-next-line no-unused-vars
 const VALIDATE_TOKEN_QUERY = gql`
 query BVR_CLI_ValidateToken{
   me {
@@ -33,6 +35,46 @@ query BVR_CLI_ValidateToken{
 }
 `
 
+const reportMapping = [
+    {
+        name: "Field Changes",
+        func: generateFieldChangesReport
+    },
+    {
+        name: "Field Records",
+        func: generateFieldRecordsReport
+    },
+    {
+        name: "Field Usage",
+        func: generateFieldUsageReport
+    },
+    {
+        name: "Client Usage",
+        func: generateClientUsageReport
+    },
+    {
+        name: "User Report",
+        func: generateUserReport
+    },
+    {
+        name: "Operation Counts",
+        func: generateOperationCountsReport
+    },
+    {
+        name: "Schema Checks",
+        func: generateSchemaChecksReport
+    },
+    {
+        name: "Schema Publishes",
+        func: generateSchemaPublishesReport
+    },
+    {
+        name: "Variants",
+        func: generateVariantsReport
+    },
+]
+
+// eslint-disable-next-line no-unused-vars
 const VALIDATE_ACCOUNTID_QUERY = gql`
 query BVR_CLI_ValidateAccountId($accountId: ID!){
   account(id: $accountId) {
@@ -41,151 +83,139 @@ query BVR_CLI_ValidateAccountId($accountId: ID!){
 }
 `
 export default class ConfigCommand extends Command {
-  static paths = [['report']];
+    static paths = [['report']];
 
-  apiKey = Option.String('-k,--api-key')
+    apiKey = Option.String('-k,--api-key')
 
-  sudo = Option.Boolean('-s,--sudo', {
-    hidden: true,
-  })
-
-  output = Option.String('--output', 'csv', {
-    validator: isEnum([ 'csv', 'json', 'otel' ])
-  })
-
-  static usage = Command.Usage({
-    category: 'Report',
-    description:
-      'generates a CSV report of various metrics used to calculate the business value of a GraphQL API.',
-    examples: [['Basic usage', '$0 report']],
-  });
-
-  async execute(): Promise<number | void> {
-    let localKey = process.env["APOLLO_KEY"]
-
-    if (this.apiKey) {
-      localKey = this.apiKey
-    }
-
-    if (!localKey) {
-      localKey = await password({
-        message: 'Enter your Apollo API key'
-      })
-    }
-
-    const client = new GraphQLClient('https://graphql.api.apollographql.com/api/graphql', {
-      headers: {
-        "x-api-key": localKey,
-        "apollo-sudo": this.sudo ? "true" : "false",
-        "apollographql-client-name": "@apollosolutions/bvr-cli",
-        "apollographql-client-version": "0.1.0"
-      }
+    sudo = Option.Boolean('-s,--sudo', {
+        hidden: true,
     })
 
-    const sdk = getSdk(client)
+    output = Option.String('--output', 'csv', {
+        validator: isEnum(['csv', 'json', 'otel'])
+    })
 
-    let accounts: string[] = []
-    try {
-      let res = await sdk.BVR_CLI_ValidateToken()
-      if (!res.me) {
-        this.context.stdout.write("Invalid API key\n")
-        return 1
-      }
-      if (res.me?.__typename === 'Service' && res.me.account?.id) {
-        accounts.push(res.me.account.id)
-      } else if (res.me.__typename === 'User') {
-        accounts = res.me.memberships.map(m => m.account.id)
-      }
-    } catch (e) {
-      this.context.stdout.write("Invalid API key\n")
-      return 1
-    }
+    static usage = Command.Usage({
+        category: 'Report',
+        description:
+            'generates a CSV report of various metrics used to calculate the business value of a GraphQL API.',
+        examples: [['Basic usage', '$0 report']],
+    });
 
-    let accountId = '';
+    async execute(): Promise<number | void> {
+        let localKey = process.env.APOLLO_KEY
 
-    if (!this.sudo) {
-      accountId = await chooseAccountFromToken(accounts)
-    } else {
-      accountId = await input({
-        message: 'Enter the account ID for the report',
-        validate: async (input) => {
-          try {
-            let res = await sdk.BVR_CLI_ValidateAccountId({ accountId: input })
-            if (res.account) {
-              return true
-            }
-          } catch (e) {
-            return "Invalid account ID"
-          }
-          return "Invalid account ID"
+        if (this.apiKey) {
+            localKey = this.apiKey
         }
-      })
+
+        if (!localKey) {
+            localKey = await password({
+                message: 'Enter your Apollo API key'
+            })
+        }
+
+        const client = new GraphQLClient('https://graphql.api.apollographql.com/api/graphql', {
+            headers: {
+                "x-api-key": localKey,
+                "apollo-sudo": this.sudo ? "true" : "false",
+                "apollographql-client-name": "@apollosolutions/bvr-cli",
+                "apollographql-client-version": "0.1.0"
+            }
+        })
+
+        const sdk = getSdk(client)
+
+        let accounts: string[] = []
+        try {
+            const res = await sdk.BVR_CLI_ValidateToken()
+            if (!res.me) {
+                this.context.stdout.write("Invalid API key\n")
+                return 1
+            }
+            if (res.me?.__typename === 'Service' && res.me.account?.id) {
+                accounts.push(res.me.account.id)
+            } else if (res.me.__typename === 'User') {
+                accounts = res.me.memberships.map(m => m.account.id)
+            }
+        } catch (e) {
+            this.context.stdout.write("Invalid API key\n")
+            return 1
+        }
+
+        let accountId = '';
+
+        if (!this.sudo) {
+            accountId = await chooseAccountFromToken(accounts)
+        } else {
+            accountId = await input({
+                message: 'Enter the account ID for the report',
+                validate: async (userInput) => {
+                    try {
+                        const res = await sdk.BVR_CLI_ValidateAccountId({ accountId: userInput })
+                        if (res.account) {
+                            return true
+                        }
+                    } catch (e) {
+                        return "Invalid account ID"
+                    }
+                    return "Invalid account ID"
+                }
+            })
+        }
+
+        const inputOffset = await select({
+            message: 'Select a time range for utilization information:',
+            choices: [{
+                name: 'Last Hour',
+                value: '-3600',
+            }, {
+                name: 'Last Day',
+                value: '-86400',
+            }, {
+                name: 'Last Week',
+                value: '-604800',
+            }, {
+                name: 'Last Month',
+                value: '-2592000',
+            }],
+        })
+
+
+        const offset = parseInt(inputOffset, 10)
+
+        this.context.stdout.write('Generating reports...\n')
+        const reportGenerators = [
+            generateClientUsageReport,
+            generateFieldChangesReport,
+            generateFieldRecordsReport,
+            generateFieldUsageReport,
+            generateUserReport,
+            generateOperationCountsReport,
+            generateSchemaChecksReport,
+            generateSchemaPublishesReport,
+            generateVariantsReport,
+        ];
+        const reportPromises = reportGenerators.map((fn) =>
+            fn({
+                command: this,
+                client: sdk,
+                accountId,
+                from: offset,
+                output: this.output,
+            }),
+        );
+        const res = await Promise.allSettled(reportPromises);
+        this.context.stdout.write(`\u2714 ${res.filter((promise) => promise.status === 'fulfilled').length} report(s) generated.\n`)
+        this.context.stdout.write(`\u2716 ${res.filter((promise) => promise.status === 'rejected').length} report(s) failed.\n`)
+        for (let i = 0; i < res.length; i += 1) {
+            const r = res[i]
+            if (r.status === 'rejected') {
+                this.context.stderr.write(`Error creating ${reportMapping[i].name}: ${(r as any).reason.response?.errors[0]?.message}\n`)
+            }
+        }
+
+        return 0
     }
-
-    const inputOffset = await select({
-      message: 'Select a time range for utilization information:',
-      choices: [{
-        name: 'Last Hour',
-        value: '-3600',
-      }, {
-        name: 'Last Day',
-        value: '-86400',
-      }, {
-        name: 'Last Week',
-        value: '-604800',
-      }, {
-        name: 'Last Month',
-        value: '-2592000',
-      }],
-    })
-
-
-    const offset = parseInt(inputOffset)
-
-    this.context.stdout.write('Generating reports...\n')
-    const reportGenerators = [
-        generateClientUsageReport,
-        generateFieldChangesReport,
-        generateFieldRecordsReport,
-        generateFieldUsageReport,
-        generateOdysseyReport,
-        generateOperationCountsReport,
-        generateSchemaChecksReport,
-        generateSchemaPublishesReport,
-        generateVariantsReport,
-    ];
-    const reportPromises = reportGenerators.map((fn) =>
-        fn({
-            command: this,
-            client: sdk,
-            accountId,
-            from: offset,
-            output: this.output,
-        }),
-    );
-    let res = await Promise.allSettled(reportPromises);
-    this.context.stdout.write(`\u2714 ${res.filter((promise) => promise.status === 'fulfilled').length} report(s) generated.\n`)
-    this.context.stdout.write(`\u2716 ${res.filter((promise) => promise.status === 'rejected').length} report(s) failed.\n`)
-  }
 }
 
-const chooseAccountFromToken = async (existingAccounts: string[]): Promise<string> => {
-  // Check if the user wants to use the account within the token itself
-  if (existingAccounts.length === 1) {
-    let useExisting = await confirm({
-      message: `Use account ${existingAccounts[0]}?`,
-      default: true,
-    })
-
-    if (useExisting) {
-      return existingAccounts[0]
-    }
-  } else if (existingAccounts.length > 1) {
-    let accountId = await select({
-      message: 'Select an account:',
-      choices: existingAccounts.map(id => ({ name: id, value: id }))
-    })
-    return accountId
-  }
-  return ''
-}

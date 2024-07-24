@@ -5,7 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DownstreamLaunchInitiation = exports.DeletionTargetType = exports.DatadogApiRegion = exports.CoordinateUsageColumn = exports.CoordinateKind = exports.CoordinateInsightsListOrderByColumn = exports.ContractVariantFailedStep = exports.ComparisonOperator = exports.CommentType = exports.CommentStatus = exports.CloudTier = exports.CloudProvider = exports.CloudBuildPipelineTrackInput = exports.CheckWorkflowTaskStatus = exports.CheckWorkflowStatus = exports.CheckStepStatus = exports.CheckFilterInputStatusOption = exports.ChangeType = exports.ChangeSeverity = exports.ChangeCode = exports.ChangeCategory = exports.CacheScope = exports.CacheControlScope = exports.BuildPipelineTrackBadge = exports.BuildPipelineTrack = exports.BillingUsageStatsWindowSize = exports.BillingUsageStatsColumn = exports.BillingPlanTier = exports.BillingPlanKind = exports.BillingPeriod = exports.BillingModel = exports.AvatarUploadErrorCode = exports.AvatarDeleteErrorCode = exports.AuditStatus = exports.AuditAction = exports.ActorType = exports.AccountTraceRefsColumn = exports.AccountTracePathErrorsRefsColumn = exports.AccountState = exports.AccountQueryStatsColumn = exports.AccountOperationCheckStatsColumn = exports.AccountLockType = exports.AccountGraphosCloudMetricsColumn = exports.AccountFieldUsageColumn = exports.AccountFieldLatenciesColumn = exports.AccountFieldExecutionsColumn = exports.AccountErrorStatsColumn = exports.AccountEdgeServerInfosColumn = exports.AccountCoordinateUsageColumn = exports.AccountBillingUsageStatsColumn = void 0;
 exports.ReasonCause = exports.QueryTriggerWindow = exports.QueryTriggerScope = exports.QueryTriggerMetric = exports.QueryStatsColumn = exports.ProposalStatus = exports.ProposalRevisionHistoryOrder = exports.ProposalLifecycleEvent = exports.ProposalCoverage = exports.ProposalChangeMismatchSeverity = exports.ProposalActivityAction = exports.PromoteSchemaResponseCode = exports.PromoteSchemaErrorCode = exports.PrivateSubgraphShareStatus = exports.OrganizationSsoProvider = exports.Ordering = exports.OrderType = exports.OrderStatus = exports.OperationType = exports.OperationInsightsListOrderByColumn = exports.OperationCheckStatsColumn = exports.OnboardingArchitecture = exports.NotificationStatus = exports.LoginFlowSource = exports.LogLevel = exports.LinterRuleCategory = exports.LintRule = exports.LintDiagnosticLevel = exports.LinkInfoType = exports.LaunchStatus = exports.LaunchHistoryOrder = exports.InvoiceState = exports.IntrospectionTypeKind = exports.IntrospectionDirectiveLocation = exports.InternalMdgAdminRole = exports.HttpMethod = exports.GraphosCloudMetricsColumn = exports.GraphVariantFilter = exports.GraphType = exports.GraphState = exports.GitRemoteHost = exports.FlatDiffType = exports.FieldUsageColumn = exports.FieldLatenciesColumn = exports.FieldInsightsListOrderByColumn = exports.FieldExecutionsColumn = exports.EventEnum = exports.ErrorStatsColumn = exports.EmailCategory = exports.EdgeServerInfosColumn = void 0;
-exports.getSdk = exports.Bvr_Cli_VariantsInfoDocument = exports.Bvr_Cli_SchemaPublishesDocument = exports.Bvr_Cli_SchemaChecksDocument = exports.Bvr_Cli_OperationCountsDocument = exports.Bvr_Cli_OdysseyStatsDocument = exports.Bvr_Cli_FieldUsageDocument = exports.Bvr_Cli_FieldRecordsDocument = exports.Bvr_Cli_FieldChangeSummaryDocument = exports.Bvr_Cli_ClientUsageDocument = exports.Bvr_Cli_ValidateAccountIdDocument = exports.Bvr_Cli_ValidateTokenDocument = exports.ValidationErrorType = exports.ValidationErrorCode = exports.UserType = exports.UserSegment = exports.UserPermission = exports.TraceRefsColumn = exports.TracePathErrorsRefsColumn = exports.TicketStatus = exports.TicketPriority = exports.ThemeName = exports.SubscriptionState = exports.SubgraphChangeType = exports.StoreSchemaErrorCode = exports.Status = exports.State = exports.SsoConnectionState = exports.SlackPublishState = exports.ShardStatus = exports.ServiceTraceRefsColumn = exports.ServiceTracePathErrorsRefsColumn = exports.ServiceQueryStatsColumn = exports.ServiceOperationCheckStatsColumn = exports.ServiceGraphosCloudMetricsColumn = exports.ServiceFieldUsageColumn = exports.ServiceFieldLatenciesColumn = exports.ServiceFieldExecutionsColumn = exports.ServiceErrorStatsColumn = exports.ServiceEdgeServerInfosColumn = exports.ServiceCoordinateUsageColumn = exports.ServiceBillingUsageStatsColumn = exports.SchemaTagHistoryOrder = exports.RouterStatus = exports.RouterEntitlementAudience = exports.ReviewDecision = exports.ResponseHints = exports.Resolution = exports.ReportSchemaErrorCode = exports.RegionState = void 0;
+exports.Bvr_Cli_UserStatsDocument = exports.Bvr_Cli_SchemaPublishesDocument = exports.Bvr_Cli_SchemaChecksDocument = exports.Bvr_Cli_OperationCountsDocument = exports.Bvr_Cli_FieldUsageDocument = exports.Bvr_Cli_FieldRecordsDocument = exports.Bvr_Cli_FieldChangeSummaryDocument = exports.Bvr_Cli_ClientUsageDocument = exports.Bvr_Cli_ValidateAccountIdDocument = exports.Bvr_Cli_ValidateTokenDocument = exports.ValidationErrorType = exports.ValidationErrorCode = exports.UserType = exports.UserSegment = exports.UserPermission = exports.TraceRefsColumn = exports.TracePathErrorsRefsColumn = exports.TraceNodeKind = exports.TicketStatus = exports.TicketPriority = exports.ThemeName = exports.SubscriptionState = exports.SubgraphChangeType = exports.StoreSchemaErrorCode = exports.Status = exports.State = exports.SsoConnectionStateV2 = exports.SsoConnectionState = exports.SlackPublishState = exports.ShardStatus = exports.ServiceTraceRefsColumn = exports.ServiceTracePathErrorsRefsColumn = exports.ServiceQueryStatsColumn = exports.ServiceOperationCheckStatsColumn = exports.ServiceGraphosCloudMetricsColumn = exports.ServiceFieldUsageColumn = exports.ServiceFieldLatenciesColumn = exports.ServiceFieldExecutionsColumn = exports.ServiceErrorStatsColumn = exports.ServiceEdgeServerInfosColumn = exports.ServiceCoordinateUsageColumn = exports.ServiceBillingUsageStatsColumn = exports.SchemaTagHistoryOrder = exports.RouterStatus = exports.RouterEntitlementAudience = exports.ReviewDecision = exports.ResponseHints = exports.Resolution = exports.ReportSchemaErrorCode = exports.RegionState = void 0;
+exports.getSdk = exports.Bvr_Cli_VariantsInfoDocument = void 0;
 const graphql_tag_1 = __importDefault(require("graphql-tag"));
 /** Columns of AccountBillingUsageStats. */
 var AccountBillingUsageStatsColumn;
@@ -422,6 +423,12 @@ var ChangeCode;
     ChangeCode["FieldRemoved"] = "FIELD_REMOVED";
     /** Field was removed from the input object. */
     ChangeCode["FieldRemovedFromInputObject"] = "FIELD_REMOVED_FROM_INPUT_OBJECT";
+    /** A default value was added to an input object field. */
+    ChangeCode["InputObjectFieldDefaultValueAdded"] = "INPUT_OBJECT_FIELD_DEFAULT_VALUE_ADDED";
+    /** The default value of an input object field was changed. */
+    ChangeCode["InputObjectFieldDefaultValueChange"] = "INPUT_OBJECT_FIELD_DEFAULT_VALUE_CHANGE";
+    /** The default value of an input object field was removed. */
+    ChangeCode["InputObjectFieldDefaultValueRemoved"] = "INPUT_OBJECT_FIELD_DEFAULT_VALUE_REMOVED";
     /** Non-nullable field was added to the input object. (Deprecated.) */
     ChangeCode["NonNullableFieldAddedToInputObject"] = "NON_NULLABLE_FIELD_ADDED_TO_INPUT_OBJECT";
     /** Nullable field was added to the input type. (Deprecated.) */
@@ -1596,6 +1603,19 @@ var SsoConnectionState;
     SsoConnectionState["Disabled"] = "DISABLED";
     SsoConnectionState["Enabled"] = "ENABLED";
 })(SsoConnectionState = exports.SsoConnectionState || (exports.SsoConnectionState = {}));
+var SsoConnectionStateV2;
+(function (SsoConnectionStateV2) {
+    /** The connection has been disabled by an admin */
+    SsoConnectionStateV2["Disabled"] = "DISABLED";
+    /** The connection has been finalized. a connection can only go from VALIDATED->ENABLED or DISABLED->ENABLED */
+    SsoConnectionStateV2["Enabled"] = "ENABLED";
+    /** The initial state for base connections - setup still in progress */
+    SsoConnectionStateV2["Initialized"] = "INITIALIZED";
+    /** The connection has been configured as either SAML/OIDC and can be used to login */
+    SsoConnectionStateV2["Staged"] = "STAGED";
+    /** The connection has had at least one successful login - connections automatically transition from STAGED->VALIDATED on first login */
+    SsoConnectionStateV2["Validated"] = "VALIDATED";
+})(SsoConnectionStateV2 = exports.SsoConnectionStateV2 || (exports.SsoConnectionStateV2 = {}));
 var State;
 (function (State) {
     State["Approved"] = "approved";
@@ -1667,6 +1687,15 @@ var TicketStatus;
     TicketStatus["Pending"] = "PENDING";
     TicketStatus["Solved"] = "SOLVED";
 })(TicketStatus = exports.TicketStatus || (exports.TicketStatus = {}));
+var TraceNodeKind;
+(function (TraceNodeKind) {
+    TraceNodeKind["ArrayIndexResolver"] = "ARRAY_INDEX_RESOLVER";
+    TraceNodeKind["FieldResolver"] = "FIELD_RESOLVER";
+    TraceNodeKind["Request"] = "REQUEST";
+    TraceNodeKind["RouterInternal"] = "ROUTER_INTERNAL";
+    TraceNodeKind["SubgraphRequest"] = "SUBGRAPH_REQUEST";
+    TraceNodeKind["UserPlugin"] = "USER_PLUGIN";
+})(TraceNodeKind = exports.TraceNodeKind || (exports.TraceNodeKind = {}));
 /** Columns of TracePathErrorsRefs. */
 var TracePathErrorsRefsColumn;
 (function (TracePathErrorsRefsColumn) {
@@ -1883,31 +1912,6 @@ exports.Bvr_Cli_FieldUsageDocument = (0, graphql_tag_1.default) `
   }
 }
     `;
-exports.Bvr_Cli_OdysseyStatsDocument = (0, graphql_tag_1.default) `
-    query BVR_CLI_OdysseyStats($accountId: ID!) {
-  organization(id: $accountId) {
-    id
-    memberships {
-      user {
-        fullName
-        lastAuthenticatedAt
-        email
-        emailVerified
-        type
-        odysseyCertifications {
-          earnedAt
-          certificationId
-        }
-        odysseyCourses {
-          completedAt
-          enrolledAt
-          id
-        }
-      }
-    }
-  }
-}
-    `;
 exports.Bvr_Cli_OperationCountsDocument = (0, graphql_tag_1.default) `
     query BVR_CLI_OperationCounts($accountId: ID!, $from: Timestamp!, $resolution: Resolution, $to: Timestamp) {
   organization(id: $accountId) {
@@ -1957,11 +1961,46 @@ exports.Bvr_Cli_SchemaPublishesDocument = (0, graphql_tag_1.default) `
   }
 }
     `;
+exports.Bvr_Cli_UserStatsDocument = (0, graphql_tag_1.default) `
+    query BVR_CLI_UserStats($accountId: ID!) {
+  organization(id: $accountId) {
+    id
+    memberships {
+      user {
+        fullName
+        lastAuthenticatedAt
+        email
+        emailVerified
+        type
+        odysseyCertifications {
+          earnedAt
+          certificationId
+        }
+        odysseyCourses {
+          completedAt
+          enrolledAt
+          id
+        }
+      }
+    }
+  }
+}
+    `;
 exports.Bvr_Cli_VariantsInfoDocument = (0, graphql_tag_1.default) `
     query BVR_CLI_VariantsInfo($accountId: ID!) {
   organization(id: $accountId) {
     id
     graphs {
+      proposals {
+        totalCount
+        proposals {
+          id
+          status
+          sourceVariant {
+            id
+          }
+        }
+      }
       variants {
         name
         id
@@ -1982,6 +2021,32 @@ exports.Bvr_Cli_VariantsInfoDocument = (0, graphql_tag_1.default) `
         }
         latestApprovedLaunch {
           completedAt
+          build {
+            result {
+              __typename
+              ... on BuildSuccess {
+                coreSchema {
+                  coreDocument
+                }
+              }
+            }
+          }
+        }
+        launchHistoryLength
+        subgraphs {
+          name
+        }
+        persistedQueryList {
+          operations {
+            edges {
+              node {
+                id
+              }
+            }
+            pageInfo {
+              hasNextPage
+            }
+          }
         }
       }
     }
@@ -2009,9 +2074,6 @@ function getSdk(client, withWrapper = defaultWrapper) {
         BVR_CLI_FieldUsage(variables, requestHeaders) {
             return withWrapper((wrappedRequestHeaders) => client.request(exports.Bvr_Cli_FieldUsageDocument, variables, Object.assign(Object.assign({}, requestHeaders), wrappedRequestHeaders)), 'BVR_CLI_FieldUsage', 'query', variables);
         },
-        BVR_CLI_OdysseyStats(variables, requestHeaders) {
-            return withWrapper((wrappedRequestHeaders) => client.request(exports.Bvr_Cli_OdysseyStatsDocument, variables, Object.assign(Object.assign({}, requestHeaders), wrappedRequestHeaders)), 'BVR_CLI_OdysseyStats', 'query', variables);
-        },
         BVR_CLI_OperationCounts(variables, requestHeaders) {
             return withWrapper((wrappedRequestHeaders) => client.request(exports.Bvr_Cli_OperationCountsDocument, variables, Object.assign(Object.assign({}, requestHeaders), wrappedRequestHeaders)), 'BVR_CLI_OperationCounts', 'query', variables);
         },
@@ -2020,6 +2082,9 @@ function getSdk(client, withWrapper = defaultWrapper) {
         },
         BVR_CLI_SchemaPublishes(variables, requestHeaders) {
             return withWrapper((wrappedRequestHeaders) => client.request(exports.Bvr_Cli_SchemaPublishesDocument, variables, Object.assign(Object.assign({}, requestHeaders), wrappedRequestHeaders)), 'BVR_CLI_SchemaPublishes', 'query', variables);
+        },
+        BVR_CLI_UserStats(variables, requestHeaders) {
+            return withWrapper((wrappedRequestHeaders) => client.request(exports.Bvr_Cli_UserStatsDocument, variables, Object.assign(Object.assign({}, requestHeaders), wrappedRequestHeaders)), 'BVR_CLI_UserStats', 'query', variables);
         },
         BVR_CLI_VariantsInfo(variables, requestHeaders) {
             return withWrapper((wrappedRequestHeaders) => client.request(exports.Bvr_Cli_VariantsInfoDocument, variables, Object.assign(Object.assign({}, requestHeaders), wrappedRequestHeaders)), 'BVR_CLI_VariantsInfo', 'query', variables);
