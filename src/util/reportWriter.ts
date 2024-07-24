@@ -8,7 +8,6 @@ export const writeReports = async (
 ) => {
     const { command, output } = options;
 
-    command.context.stdout.write(output);
     if (output === 'json') {
         command.context.stdout.write(JSON.stringify(records, null, 2));
         return;

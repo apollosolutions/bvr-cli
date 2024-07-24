@@ -89,7 +89,11 @@ const generateFieldRecordsReport = (options) => __awaiter(void 0, void 0, void 0
                 });
             });
         });
-    });
+    }).flatMap((f) => (f ? [f] : []));
+    if (!records) {
+        command.context.stdout.write("No records found for field information.\n");
+        return;
+    }
     yield (0, reportWriter_1.writeReports)(options, records, writer);
     command.context.stdout.write("Field records report generated.\n");
 });

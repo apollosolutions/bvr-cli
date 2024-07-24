@@ -179,18 +179,7 @@ class ConfigCommand extends clipanion_1.Command {
             });
             const offset = parseInt(inputOffset, 10);
             this.context.stdout.write('Generating reports...\n');
-            const reportGenerators = [
-                clientUsage_1.generateClientUsageReport,
-                fieldChanges_1.generateFieldChangesReport,
-                fieldRecords_1.generateFieldRecordsReport,
-                fieldUsage_1.generateFieldUsageReport,
-                users_1.generateUserReport,
-                operationCounts_1.generateOperationCountsReport,
-                schemaChecks_1.generateSchemaChecksReport,
-                schemaPublishes_1.generateSchemaPublishesReport,
-                variants_1.generateVariantsReport,
-            ];
-            const reportPromises = reportGenerators.map((fn) => fn({
+            const reportPromises = reportMapping.map(({ func: fn }) => fn({
                 command: this,
                 client: sdk,
                 accountId,

@@ -18,7 +18,7 @@ const writeReports = (options, records, writer) => __awaiter(void 0, void 0, voi
         return;
     }
     if (output === 'csv') {
-        return yield writer.writeRecords(records);
+        yield writer.writeRecords(records);
     }
 });
 exports.writeReports = writeReports;

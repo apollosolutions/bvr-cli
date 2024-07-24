@@ -73,8 +73,12 @@ export const generateFieldRecordsReport = async (options: GenerateReportOptions)
         childNodeName: change.childNode?.name ?? "UNKNOWN",
         parentNodeKind: change.parentNode?.kind ?? "UNKNOWN",
         parentNodeName: change.parentNode?.name ?? "UNKNOWN",
-    }))))
+    })))).flatMap((f) => (f ? [f] : []))
 
+    if (!records) {
+        command.context.stdout.write("No records found for field information.\n")
+        return
+    }
     await writeReports(options, records, writer);
     command.context.stdout.write("Field records report generated.\n")
 }

@@ -185,18 +185,8 @@ export default class ConfigCommand extends Command {
         const offset = parseInt(inputOffset, 10)
 
         this.context.stdout.write('Generating reports...\n')
-        const reportGenerators = [
-            generateClientUsageReport,
-            generateFieldChangesReport,
-            generateFieldRecordsReport,
-            generateFieldUsageReport,
-            generateUserReport,
-            generateOperationCountsReport,
-            generateSchemaChecksReport,
-            generateSchemaPublishesReport,
-            generateVariantsReport,
-        ];
-        const reportPromises = reportGenerators.map((fn) =>
+
+        const reportPromises = reportMapping.map(({ func: fn }) =>
             fn({
                 command: this,
                 client: sdk,
